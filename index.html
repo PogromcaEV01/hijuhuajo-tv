@@ -38,29 +38,26 @@
 
 <script>
 let scheduleConfig = [];
-let videosDB = {}; // Baza wideo z CSV (klucz: nazwa folderu, wartość: posortowana tablica plików)
-const ambientFile = "https://aelwyd.space/ambient.mp4";
+let videosDB = {};
+// Zaktualizowany link do ambientu (upewnij się czy ścieżka do niego też ma hijuhuajo-tv/)
+const ambientFile = "https://aelwyd.space/hijuhuajo-tv/ambient.mp4"; 
 let currentIsAmbient = false;
 
-// 1. Oblicza aktualny dzień od 1 do 30
 function getCycleDay() {
   const now = new Date();
   const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
   return (Math.floor(localEpochMs / 86400000) % 30) + 1;
 }
 
-// 2. Parser pliku CSV z Twojego formatu
 async function loadCSV() {
-  const res = await fetch("ramowka.csv");
+  const res = await fetch("ramowka.csv"); // pamiętaj, że plik ma się nazywać videos.csv
   const text = await res.text();
   
   const lines = text.trim().split('\n');
   const db = {};
 
-  // Pomijamy pierwszy wiersz (nagłówki)
   for(let i = 1; i < lines.length; i++) {
     const row = lines[i];
-    // Dzielenie kolumn po '";"' i usunięcie skrajnych cudzysłowów
     const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
     if (cols.length < 3) continue;
 
@@ -68,7 +65,6 @@ async function loadCSV() {
     const fileName = cols[1];
     const ext = cols[2];
 
-    // Wyciąganie nazwy folderu ze ścieżki Windows
     const pathParts = fullPath.split('\\');
     const folderName = pathParts[pathParts.length - 1];
 
@@ -76,7 +72,6 @@ async function loadCSV() {
     db[folderName].push(fileName + ext);
   }
 
-  // Naturalne sortowanie plików w każdym folderze (1 przed 10)
   for (const folder in db) {
     db[folder].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
   }
@@ -113,7 +108,7 @@ function playAmbient() {
   video.onloadedmetadata = () => {
     const now = new Date();
     const offsetSec = (now.getMinutes() % 30) * 60 + now.getSeconds();
-    const epDur = parseFloat(video.dataset.epDuration || 1380); // Zakładamy ok. 23 min
+    const epDur = parseFloat(video.dataset.epDuration || 1380);
     video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
     video.play().catch(() => {});
   };
@@ -128,7 +123,6 @@ function sync() {
 
   const isSecondHalf = m >= 30;
 
-  // Znajdujemy konfigurację dla obecnej godziny
   const hourConfig = scheduleConfig.find(x => x.hour === h) || scheduleConfig[0];
   const folder = hourConfig.folder;
   const seriesVideos = videosDB[folder];
@@ -138,26 +132,21 @@ function sync() {
     return;
   }
 
-  // LOGIKA ODCINKÓW (Wczorajszy + Dzisiejszy)
-  // Dzień 1: Pierwsza połowa to odc. 1 (index 0), druga połowa odc. 2 (index 1)
-  // Dzień 2: Pierwsza połowa to odc. 2 (index 1), druga połowa odc. 3 (index 2)
   let targetIndex = cycleDay - 1; 
   if (isSecondHalf) {
-    targetIndex += 1; // Przeskok na "dzisiejszy nowy"
+    targetIndex += 1;
   }
 
-  // Zapętlenie odcinków jeśli lista się skończy
   const safeIndex = targetIndex % seriesVideos.length;
   const currentFileName = seriesVideos[safeIndex];
 
-  // Generowanie linku do R2 z kodowaniem URL (aby np. spacje zadziałały)
-  const videoUrl = `https://aelwyd.space/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
+  // 🔥 TUTAJ DODANO FOLDER 'hijuhuajo-tv/' DO LINKU
+  const videoUrl = `https://aelwyd.space/hijuhuajo-tv/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
   
   const slotId = `${folder}-day${cycleDay}-${isSecondHalf ? 'new' : 'old'}`;
   const video = document.getElementById("player");
   const offsetSec = (m % 30) * 60 + s;
 
-  // ZMIANA WIDEO
   if (video.dataset.slotId !== slotId) {
     video.dataset.slotId = slotId;
     video.src = videoUrl;
@@ -167,7 +156,6 @@ function sync() {
     video.onloadedmetadata = () => {
       video.dataset.epDuration = video.duration;
       
-      // Jeśli czas minął, włącz od razu ambient
       if (offsetSec >= video.duration) {
         playAmbient();
       } else {
@@ -181,7 +169,6 @@ function sync() {
     };
 
   } else {
-    // Ciągła kontrola, czy w trakcie trwania bloku wideo się skończyło
     if (!currentIsAmbient && video.readyState >= 1) {
       if (offsetSec >= parseFloat(video.dataset.epDuration || 99999)) {
         playAmbient();
@@ -189,7 +176,6 @@ function sync() {
     }
   }
 
-  // Aktualizacja UI
   const formatTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 AMBIENT' : '📺 TRWA';
   const episodeInfo = isSecondHalf ? 'Premiera' : 'Powtórka z wczoraj';
