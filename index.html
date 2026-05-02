@@ -11,59 +11,78 @@
       overflow: hidden;
     }
 
+    video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+
     #info {
       position: absolute;
-      bottom: 20px;
-      left: 20px;
+      bottom: 15px;
+      left: 15px;
       color: white;
       font-family: Arial;
       font-size: 18px;
       z-index: 10;
+      background: rgba(0,0,0,0.4);
+      padding: 8px 12px;
+      border-radius: 8px;
     }
   </style>
 </head>
 
 <body>
 
-<video id="player" autoplay muted controls style="width:100vw; height:100vh;"></video>
-<div id="info"></div>
+<video id="player" autoplay muted controls></video>
+<div id="info">loading...</div>
 
 <script>
 let schedule = [];
-
-async function startTV() {
-  const res = await fetch("schedule.json");
-  schedule = await res.json();
-
-  syncAndPlay();
-
-  // 🔁 pełna synchronizacja co 5 sekund
-  setInterval(syncAndPlay, 5000);
-}
-
-function getSecondsNow() {
-  const now = new Date();
-  return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-}
 
 function timeToSeconds(t) {
   const [h, m] = t.split(":").map(Number);
   return h * 3600 + m * 60;
 }
 
-function syncAndPlay() {
-  const nowSec = getSecondsNow();
+function getNowSeconds() {
+  const now = new Date();
+  return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+}
+
+async function startTV() {
+  const res = await fetch("schedule.json");
+  schedule = await res.json();
+
+  if (!Array.isArray(schedule) || schedule.length === 0) {
+    document.getElementById("info").innerText = "NO SCHEDULE 💀";
+    return;
+  }
+
+  sync();
+
+  setInterval(sync, 5000);
+}
+
+function sync() {
+  const nowSec = getNowSeconds();
 
   let current = schedule[0];
 
+  // 🔥 STABILNY PICK SLOTU
   for (let i = 0; i < schedule.length; i++) {
-    if (timeToSeconds(schedule[i].time) <= nowSec) {
+    if (nowSec >= timeToSeconds(schedule[i].time)) {
       current = schedule[i];
     }
   }
 
-  const start = timeToSeconds(current.time);
-  let offset = nowSec - start;
+  if (!current || !current.file) {
+    document.getElementById("info").innerText = "NO VALID SLOT 💀";
+    return;
+  }
+
+  const startSec = timeToSeconds(current.time);
+  let offset = nowSec - startSec;
 
   const video = document.getElementById("player");
 
@@ -73,16 +92,16 @@ function syncAndPlay() {
   }
 
   video.addEventListener("loadedmetadata", () => {
-    if (offset > video.duration) {
+    if (video.duration) {
       offset = offset % video.duration;
     }
-    video.currentTime = offset;
+    video.currentTime = Math.max(0, offset);
   });
 
   video.play().catch(() => {});
 
   document.getElementById("info").innerText =
-    `▶ ${current.title} | offset: ${offset}s`;
+    `▶ ${current.title || "UNKNOWN"} | ${offset}s`;
 }
 
 startTV();
