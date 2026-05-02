@@ -1,6 +1,6 @@
 [
-  { "time": "15:30", "file": "ep1.mp4" },
-  { "time": "16:00", "file": "ambient.mp4" },
-  { "time": "16:30", "file": "ep2.mp4" },
-  { "time": "17:00", "file": "ambient.mp4" }
+  { "time": "17:00", "file": "ep1.mp4" },
+  { "time": "17:30", "file": "ambient.mp4" },
+  { "time": "18:00", "file": "ep2.mp4" },
+  { "time": "18:30", "file": "ambient.mp4" }
 ]
