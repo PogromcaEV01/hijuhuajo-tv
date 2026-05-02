@@ -51,7 +51,7 @@ function getCycleDay() {
 
 // 2. Parser pliku CSV z Twojego formatu
 async function loadCSV() {
-  const res = await fetch("videos.csv");
+  const res = await fetch("ramowka.csv");
   const text = await res.text();
   
   const lines = text.trim().split('\n');
