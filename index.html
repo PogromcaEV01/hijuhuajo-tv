@@ -10,13 +10,11 @@
       background: black;
       overflow: hidden;
     }
-
     video {
       width: 100vw;
       height: 100vh;
       object-fit: cover;
     }
-
     #info {
       position: absolute;
       bottom: 15px;
@@ -37,10 +35,22 @@
 <div id="info">Inicjalizacja systemu...</div>
 
 <script>
+// ==========================================
+// KONFIGURACJA ŚCIEŻKI DO CLOUDFLARE R2
+// ==========================================
+// Jeśli pliki są bezpośrednio w buckecie (tak jak ambient.mp4):
+const URL_PREFIX = "https://aelwyd.space"; 
+
+// Jeśli odkryjesz, że jednak potrzebna jest nazwa bucketu, zmień na:
+// const URL_PREFIX = "https://aelwyd.space/hijuhuajo-tv";
+
+// Jeśli pliki wrzuciły się razem z folderem videos, zmień na:
+// const URL_PREFIX = "https://aelwyd.space/videos";
+// ==========================================
+
 let scheduleConfig = [];
-let videosDB = {};
-// Zaktualizowany link do ambientu (upewnij się czy ścieżka do niego też ma hijuhuajo-tv/)
-const ambientFile = "https://aelwyd.space/hijuhuajo-tv/ambient.mp4"; 
+let videosDB = {}; 
+const ambientFile = `${URL_PREFIX}/ambient.mp4`;
 let currentIsAmbient = false;
 
 function getCycleDay() {
@@ -50,7 +60,8 @@ function getCycleDay() {
 }
 
 async function loadCSV() {
-  const res = await fetch("ramowka.csv"); // pamiętaj, że plik ma się nazywać videos.csv
+  // 🔥 ZMIENIONE NA ramowka.csv
+  const res = await fetch("ramowka.csv");
   const text = await res.text();
   
   const lines = text.trim().split('\n');
@@ -108,7 +119,7 @@ function playAmbient() {
   video.onloadedmetadata = () => {
     const now = new Date();
     const offsetSec = (now.getMinutes() % 30) * 60 + now.getSeconds();
-    const epDur = parseFloat(video.dataset.epDuration || 1380);
+    const epDur = parseFloat(video.dataset.epDuration || 1380); 
     video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
     video.play().catch(() => {});
   };
@@ -122,7 +133,6 @@ function sync() {
   const s = now.getSeconds();
 
   const isSecondHalf = m >= 30;
-
   const hourConfig = scheduleConfig.find(x => x.hour === h) || scheduleConfig[0];
   const folder = hourConfig.folder;
   const seriesVideos = videosDB[folder];
@@ -134,14 +144,14 @@ function sync() {
 
   let targetIndex = cycleDay - 1; 
   if (isSecondHalf) {
-    targetIndex += 1;
+    targetIndex += 1; 
   }
 
   const safeIndex = targetIndex % seriesVideos.length;
   const currentFileName = seriesVideos[safeIndex];
 
-  // 🔥 TUTAJ DODANO FOLDER 'hijuhuajo-tv/' DO LINKU
-  const videoUrl = `https://aelwyd.space/hijuhuajo-tv/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
+  // 🔥 BUDOWANIE LINKU W OPARCIU O URL_PREFIX
+  const videoUrl = `${URL_PREFIX}/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
   
   const slotId = `${folder}-day${cycleDay}-${isSecondHalf ? 'new' : 'old'}`;
   const video = document.getElementById("player");
@@ -151,11 +161,14 @@ function sync() {
     video.dataset.slotId = slotId;
     video.src = videoUrl;
     currentIsAmbient = false;
+    
+    // Logowanie w konsoli ułatwi debugowanie
+    console.log("Ładowanie wideo URL:", videoUrl);
+    
     video.load();
 
     video.onloadedmetadata = () => {
       video.dataset.epDuration = video.duration;
-      
       if (offsetSec >= video.duration) {
         playAmbient();
       } else {
