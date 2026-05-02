@@ -1,17 +1,26 @@
 [
-  {
-    "time": "18:30",
-    "title": "Ep1",
-    "file": "https://aelwyd.space/ep1.mp4"
-  },
-  {
-    "time": "19:00",
-    "title": "Ambient",
-    "file": "https://aelwyd.space/ambient.mp4"
-  },
-  {
-    "time": "19:30",
-    "title": "Ep2",
-    "file": "https://aelwyd.space/ep2.mp4"
-  }
+  { "hour": 0, "folder": "aot s1 25 odcinków", "title": "Attack on Titan S1" },
+  { "hour": 1, "folder": "azumanga", "title": "Azumanga Daioh" },
+  { "hour": 2, "folder": "flying witch", "title": "Flying Witch" },
+  { "hour": 3, "folder": "Gekkan Shoujo Nozaki-kun", "title": "Gekkan Shoujo Nozaki-kun" },
+  { "hour": 4, "folder": "High School DxD s1", "title": "High School DxD" },
+  { "hour": 5, "folder": "High school of the dead", "title": "Highschool of the Dead" },
+  { "hour": 6, "folder": "Ijiranaide, Nagatoro-san s1", "title": "Don't Toy with Me, Miss Nagatoro" },
+  { "hour": 7, "folder": "initial D s1", "title": "Initial D First Stage" },
+  { "hour": 8, "folder": "Lupin III Part I (01-23)", "title": "Lupin III Part I" },
+  { "hour": 9, "folder": "Lupin III Part II", "title": "Lupin III Part II" },
+  { "hour": 10, "folder": "Lupin III Part III (01-50)", "title": "Lupin III Part III" },
+  { "hour": 11, "folder": "One Piece", "title": "One Piece" },
+  { "hour": 12, "folder": "re zero s1", "title": "Re:Zero S1" },
+  { "hour": 13, "folder": "Seihou Bukyou Outlaw Star", "title": "Outlaw Star" },
+  { "hour": 14, "folder": "Shikanoko Nokonoko Koshitantan", "title": "My Deer Friend Nokotan" },
+  { "hour": 15, "folder": "Shrine of the Morning Mist", "title": "Shrine of the Morning Mist" },
+  { "hour": 16, "folder": "Star Ocean EX", "title": "Star Ocean EX" },
+  { "hour": 17, "folder": "Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu", "title": "Classroom of the Elite" },
+  { "hour": 18, "folder": "Zombieland Saga S01 1080p Dual Audio BDRip 10 bits DD x265-EMBER", "title": "Zombieland Saga S1" },
+  { "hour": 19, "folder": "Zombieland Saga S02 1080p Dual Audio BDRip 10 bits DD x265-EMBER", "title": "Zombieland Saga S2" },
+  { "hour": 20, "folder": "Extras", "title": "Extras / OVA" },
+  { "hour": 21, "folder": "aot s1 25 odcinków", "title": "Attack on Titan S1 (Nocne Pasmo)" },
+  { "hour": 22, "folder": "azumanga", "title": "Azumanga Daioh (Nocne Pasmo)" },
+  { "hour": 23, "folder": "initial D s1", "title": "Initial D (Nocny Drift)" }
 ]
