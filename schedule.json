@@ -1,6 +1,17 @@
 [
-  { "time": "17:00", "file": "ep1.mp4" },
-  { "time": "17:30", "file": "ambient.mp4" },
-  { "time": "18:00", "file": "ep2.mp4" },
-  { "time": "18:30", "file": "ambient.mp4" }
+  {
+    "time": "18:30",
+    "title": "Ep1",
+    "file": "https://aelwyd.space/ep1.mp4"
+  },
+  {
+    "time": "19:00",
+    "title": "Ambient",
+    "file": "https://aelwyd.space/ambient.mp4"
+  },
+  {
+    "time": "19:30",
+    "title": "Ep2",
+    "file": "https://aelwyd.space/ep2.mp4"
+  }
 ]
