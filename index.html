@@ -3,41 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <title>Heisenberg TV 😏</title>
-</head>
-<body style="margin:0; background:black; overflow:hidden;">
 
-<video id="player" autoplay muted controls style="width:100%; height:100vh;"></video>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: white;
+      font-family: Arial;
+      font-size: 18px;
+      z-index: 10;
+    }
+  </style>
+</head>
+
+<body>
+
+<video id="player" autoplay muted controls style="width:100vw; height:100vh;"></video>
+<div id="info"></div>
 
 <script>
+let schedule = [];
+
 async function startTV() {
   const res = await fetch("schedule.json");
-  const schedule = await res.json();
+  schedule = await res.json();
 
+  syncAndPlay();
+
+  // 🔁 pełna synchronizacja co 5 sekund
+  setInterval(syncAndPlay, 5000);
+}
+
+function getSecondsNow() {
   const now = new Date();
+  return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+}
 
-  const currentSeconds =
-    now.getHours() * 3600 +
-    now.getMinutes() * 60 +
-    now.getSeconds();
+function timeToSeconds(t) {
+  const [h, m] = t.split(":").map(Number);
+  return h * 3600 + m * 60;
+}
 
-  function timeToSeconds(t) {
-    const [h, m] = t.split(":").map(Number);
-    return (h * 3600) + (m * 60);
-  }
+function syncAndPlay() {
+  const nowSec = getSecondsNow();
 
-  let currentSlot = schedule[0];
+  let current = schedule[0];
 
   for (let i = 0; i < schedule.length; i++) {
-    if (timeToSeconds(schedule[i].time) <= currentSeconds) {
-      currentSlot = schedule[i];
+    if (timeToSeconds(schedule[i].time) <= nowSec) {
+      current = schedule[i];
     }
   }
 
-  const slotStart = timeToSeconds(currentSlot.time);
-  let offset = currentSeconds - slotStart;
+  const start = timeToSeconds(current.time);
+  let offset = nowSec - start;
 
   const video = document.getElementById("player");
-  video.src = "videos/" + currentSlot.file;
+
+  if (video.src !== current.file) {
+    video.src = current.file;
+    video.load();
+  }
 
   video.addEventListener("loadedmetadata", () => {
     if (offset > video.duration) {
@@ -46,17 +79,11 @@ async function startTV() {
     video.currentTime = offset;
   });
 
-  video.addEventListener("canplay", () => {
-    video.play();
-  });
+  video.play().catch(() => {});
 
-  // 🔁 auto przełączanie na kolejny slot
-  setInterval(() => {
-    location.reload();
-  }, 30000); // co 30 sekund sprawdza czy zmienił się slot
+  document.getElementById("info").innerText =
+    `▶ ${current.title} | offset: ${offset}s`;
 }
-
-  
 
 startTV();
 </script>
