@@ -9,44 +9,26 @@
       margin: 0;
       background: black;
       overflow: hidden;
-      font-family: Arial, sans-serif;
     }
+
     video {
       width: 100vw;
       height: 100vh;
       object-fit: cover;
     }
+
     #info {
       position: absolute;
       bottom: 15px;
       left: 15px;
       color: white;
+      font-family: Arial;
       font-size: 18px;
       z-index: 10;
       background: rgba(0,0,0,0.7);
       padding: 8px 12px;
       border-radius: 8px;
     }
-    /* STYL LOGÓW NA EKRANIE */
-    #debug-panel {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 400px;
-      max-height: 300px;
-      background: rgba(0, 0, 0, 0.8);
-      color: #00ff00;
-      font-family: monospace;
-      font-size: 12px;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-y: auto;
-      z-index: 20;
-      border: 1px solid #333;
-    }
-    .log-error { color: #ff4444; }
-    .log-warn { color: #ffbb33; }
-    .log-info { color: #33b5e5; }
   </style>
 </head>
 
@@ -54,96 +36,64 @@
 <video id="player" autoplay muted controls></video>
 <div id="info">Inicjalizacja systemu...</div>
 
-<!-- PANEL LOGÓW -->
-<div id="debug-panel">
-  <div style="color: white; border-bottom: 1px solid #555; margin-bottom: 5px; padding-bottom: 5px;">
-    <strong>📺 KONSOLA DEBUGOWANIA</strong>
-  </div>
-</div>
-
 <script>
-// ==========================================
-// KONFIGURACJA
-// ==========================================
-const URL_PREFIX = "https://aelwyd.space"; 
-
-// 🔥 Jeśli wszystkie foldery w Cloudflare mają dopisek "_small" na końcu, zostaw to. 
-// Jeśli tylko AoT to ma, powinieneś zmienić to w pliku schedule.json lub CSV na sztywno.
-const FOLDER_SUFFIX = "_small"; 
-// ==========================================
-
 let scheduleConfig = [];
-let videosDB = {}; 
-const ambientFile = `${URL_PREFIX}/ambient.mp4`;
+let videosDB = {}; // Baza wideo z CSV (klucz: nazwa folderu, wartość: posortowana tablica plików)
+const ambientFile = "https://aelwyd.space/ambient.mp4";
 let currentIsAmbient = false;
 
-// Funkcja logująca na ekran
-function screenLog(msg, type = 'info') {
-  const panel = document.getElementById('debug-panel');
-  const div = document.createElement('div');
-  const time = new Date().toLocaleTimeString();
-  div.className = `log-${type}`;
-  div.innerText = `[${time}] ${msg}`;
-  panel.appendChild(div);
-  panel.scrollTop = panel.scrollHeight; // Auto-scroll w dół
-}
-
+// 1. Oblicza aktualny dzień od 1 do 30
 function getCycleDay() {
   const now = new Date();
   const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
   return (Math.floor(localEpochMs / 86400000) % 30) + 1;
 }
 
+// 2. Parser pliku CSV z Twojego formatu
 async function loadCSV() {
-  screenLog("Ładowanie pliku ramowka.csv...");
-  try {
-    const res = await fetch("ramowka.csv");
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const text = await res.text();
-    
-    const lines = text.trim().split('\n');
-    const db = {};
+  const res = await fetch("ramowka.csv");
+  const text = await res.text();
+  
+  const lines = text.trim().split('\n');
+  const db = {};
 
-    for(let i = 1; i < lines.length; i++) {
-      const row = lines[i];
-      const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
-      if (cols.length < 3) continue;
+  // Pomijamy pierwszy wiersz (nagłówki)
+  for(let i = 1; i < lines.length; i++) {
+    const row = lines[i];
+    // Dzielenie kolumn po '";"' i usunięcie skrajnych cudzysłowów
+    const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
+    if (cols.length < 3) continue;
 
-      const fullPath = cols[0];
-      const fileName = cols[1];
-      const ext = cols[2];
+    const fullPath = cols[0];
+    const fileName = cols[1];
+    const ext = cols[2];
 
-      const pathParts = fullPath.split('\\');
-      const folderName = pathParts[pathParts.length - 1];
+    // Wyciąganie nazwy folderu ze ścieżki Windows
+    const pathParts = fullPath.split('\\');
+    const folderName = pathParts[pathParts.length - 1];
 
-      if (!db[folderName]) db[folderName] = [];
-      db[folderName].push(fileName + ext);
-    }
-
-    for (const folder in db) {
-      db[folder].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-    }
-    
-    screenLog(`Wczytano ${Object.keys(db).length} folderów z CSV.`, 'info');
-    return db;
-  } catch (e) {
-    screenLog(`Błąd wczytywania CSV: ${e.message}`, 'error');
-    throw e;
+    if (!db[folderName]) db[folderName] = [];
+    db[folderName].push(fileName + ext);
   }
+
+  // Naturalne sortowanie plików w każdym folderze (1 przed 10)
+  for (const folder in db) {
+    db[folder].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+  }
+
+  return db;
 }
 
 async function startTV() {
   try {
-    screenLog("Pobieranie schedule.json...");
     const res = await fetch("schedule.json");
-    if (!res.ok) throw new Error(`HTTP status: ${res.status}`);
     scheduleConfig = await res.json();
     
     document.getElementById("info").innerText = "Pobieranie bazy wideo...";
     videosDB = await loadCSV();
   } catch (e) {
     document.getElementById("info").innerText = "BŁĄD ŁADOWANIA DANYCH 💀";
-    screenLog(`StartTV error: ${e.message}`, 'error');
+    console.error(e);
     return;
   }
 
@@ -155,7 +105,6 @@ function playAmbient() {
   const video = document.getElementById("player");
   if (currentIsAmbient) return;
   
-  screenLog(`Uruchamianie Ambient: ${ambientFile}`, 'warn');
   currentIsAmbient = true;
   video.src = ambientFile;
   video.loop = true;
@@ -164,13 +113,9 @@ function playAmbient() {
   video.onloadedmetadata = () => {
     const now = new Date();
     const offsetSec = (now.getMinutes() % 30) * 60 + now.getSeconds();
-    const epDur = parseFloat(video.dataset.epDuration || 1380); 
+    const epDur = parseFloat(video.dataset.epDuration || 1380); // Zakładamy ok. 23 min
     video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
-    video.play().catch(e => screenLog(`Ambient play blocked: ${e.message}`, 'error'));
-  };
-  
-  video.onerror = () => {
-    screenLog(`Błąd odtwarzania ambientu! 404?`, 'error');
+    video.play().catch(() => {});
   };
 }
 
@@ -182,6 +127,8 @@ function sync() {
   const s = now.getSeconds();
 
   const isSecondHalf = m >= 30;
+
+  // Znajdujemy konfigurację dla obecnej godziny
   const hourConfig = scheduleConfig.find(x => x.hour === h) || scheduleConfig[0];
   const folder = hourConfig.folder;
   const seriesVideos = videosDB[folder];
@@ -191,27 +138,27 @@ function sync() {
     return;
   }
 
+  // LOGIKA ODCINKÓW (Wczorajszy + Dzisiejszy)
+  // Dzień 1: Pierwsza połowa to odc. 1 (index 0), druga połowa odc. 2 (index 1)
+  // Dzień 2: Pierwsza połowa to odc. 2 (index 1), druga połowa odc. 3 (index 2)
   let targetIndex = cycleDay - 1; 
   if (isSecondHalf) {
-    targetIndex += 1; 
+    targetIndex += 1; // Przeskok na "dzisiejszy nowy"
   }
 
+  // Zapętlenie odcinków jeśli lista się skończy
   const safeIndex = targetIndex % seriesVideos.length;
   const currentFileName = seriesVideos[safeIndex];
 
-  // 🔥 TUTAJ DODAJEMY _small DO NAZWY FOLDERU Z CSV
-  const finalFolderName = folder + FOLDER_SUFFIX;
-  
-  const videoUrl = `${URL_PREFIX}/${encodeURIComponent(finalFolderName)}/${encodeURIComponent(currentFileName)}`;
+  // Generowanie linku do R2 z kodowaniem URL (aby np. spacje zadziałały)
+  const videoUrl = `https://aelwyd.space/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
   
   const slotId = `${folder}-day${cycleDay}-${isSecondHalf ? 'new' : 'old'}`;
   const video = document.getElementById("player");
   const offsetSec = (m % 30) * 60 + s;
 
+  // ZMIANA WIDEO
   if (video.dataset.slotId !== slotId) {
-    screenLog(`ZMIANA SLOTU na: ${slotId}`);
-    screenLog(`LINK: ${videoUrl}`, 'info');
-    
     video.dataset.slotId = slotId;
     video.src = videoUrl;
     currentIsAmbient = false;
@@ -219,35 +166,30 @@ function sync() {
 
     video.onloadedmetadata = () => {
       video.dataset.epDuration = video.duration;
+      
+      // Jeśli czas minął, włącz od razu ambient
       if (offsetSec >= video.duration) {
-        screenLog(`Wideo minęło w czasie rzeczywistym -> Ambient`, 'warn');
         playAmbient();
       } else {
         video.currentTime = offsetSec;
-        video.play().catch(e => screenLog(`Play blocked: ${e.message}`, 'error'));
+        video.play().catch(() => {});
       }
-    };
-
-    video.onerror = () => {
-      screenLog(`BŁĄD ODTWARZANIA! Plik nie istnieje? (Sprawdź link wyżej)`, 'error');
     };
 
     video.onended = () => {
-      if (!currentIsAmbient) {
-        screenLog(`Odcinek zakończony naturalnie -> Ambient`);
-        playAmbient();
-      }
+      if (!currentIsAmbient) playAmbient();
     };
 
   } else {
+    // Ciągła kontrola, czy w trakcie trwania bloku wideo się skończyło
     if (!currentIsAmbient && video.readyState >= 1) {
       if (offsetSec >= parseFloat(video.dataset.epDuration || 99999)) {
-        screenLog(`Czas bloku przekroczył długość wideo -> Ambient`, 'warn');
         playAmbient();
       }
     }
   }
 
+  // Aktualizacja UI
   const formatTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 AMBIENT' : '📺 TRWA';
   const episodeInfo = isSecondHalf ? 'Premiera' : 'Powtórka z wczoraj';
