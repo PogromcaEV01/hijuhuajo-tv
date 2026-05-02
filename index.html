@@ -33,15 +33,6 @@ async function startTV() {
     }
   }
 
-  const title = document.createElement("div");
-title.style.position = "absolute";
-title.style.bottom = "20px";
-title.style.left = "20px";
-title.style.color = "white";
-title.style.fontSize = "20px";
-title.innerText = currentSlot.file;
-document.body.appendChild(title);
-
   const slotStart = timeToSeconds(currentSlot.time);
   let offset = currentSeconds - slotStart;
 
