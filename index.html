@@ -83,35 +83,30 @@
 
 <script>
 let scheduleConfig = [];
-let videosDB = {}; // Baza wideo z CSV (klucz: nazwa folderu, wartość: posortowana tablica plików)
+let videosDB = {}; 
 const ambientFile = "https://aelwyd.space/ambient.mp4";
 let currentIsAmbient = false;
 
-// Ochrona przed pauzowaniem (np. z poziomu klawiatury lub sprzętowych klawiszy multimedialnych)
 const videoPlayerElement = document.getElementById("player");
 videoPlayerElement.addEventListener("pause", () => {
     videoPlayerElement.play().catch(() => {});
 });
 
-// 1. Oblicza aktualny dzień od 1 do 30
+// Zwraca dzień całego cyklu: 1 do 182
 function getCycleDay() {
   const now = new Date();
   const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
-  return (Math.floor(localEpochMs / 86400000) % 30) + 1;
+  return (Math.floor(localEpochMs / 86400000) % 182) + 1;
 }
 
-// 2. Parser pliku CSV z Twojego formatu
 async function loadCSV() {
   const res = await fetch("ramowka.csv");
   const text = await res.text();
-  
   const lines = text.trim().split('\n');
   const db = {};
 
-  // Pomijamy pierwszy wiersz (nagłówki)
   for(let i = 1; i < lines.length; i++) {
     const row = lines[i];
-    // Dzielenie kolumn po '";"' i usunięcie skrajnych cudzysłowów
     const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
     if (cols.length < 3) continue;
 
@@ -119,7 +114,6 @@ async function loadCSV() {
     const fileName = cols[1];
     const ext = cols[2];
 
-    // Wyciąganie nazwy folderu ze ścieżki Windows
     const pathParts = fullPath.split('\\');
     const folderName = pathParts[pathParts.length - 1];
 
@@ -127,11 +121,9 @@ async function loadCSV() {
     db[folderName].push(fileName + ext);
   }
 
-  // Naturalne sortowanie plików w każdym folderze (1 przed 10)
   for (const folder in db) {
     db[folder].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
   }
-
   return db;
 }
 
@@ -139,7 +131,6 @@ async function startTV() {
   try {
     const res = await fetch("schedule.json");
     scheduleConfig = await res.json();
-    
     document.getElementById("info").innerText = "Pobieranie bazy wideo...";
     videosDB = await loadCSV();
   } catch (e) {
@@ -147,7 +138,6 @@ async function startTV() {
     console.error(e);
     return;
   }
-
   sync();
   setInterval(sync, 5000);
 }
@@ -164,7 +154,7 @@ function playAmbient() {
   video.onloadedmetadata = () => {
     const now = new Date();
     const offsetSec = (now.getMinutes() % 30) * 60 + now.getSeconds();
-    const epDur = parseFloat(video.dataset.epDuration || 1380); // Zakładamy ok. 23 min
+    const epDur = parseFloat(video.dataset.epDuration || 1380); 
     video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
     video.play().catch(() => {});
   };
@@ -173,40 +163,76 @@ function playAmbient() {
 function sync() {
   const now = new Date();
   const cycleDay = getCycleDay();
+  
+  // Obliczenie aktualnego dnia tygodnia na podstawie cycleDay (1=Poniedziałek, 7=Niedziela)
+  // Zakładamy, że cykl zaczął się w poniedziałek
+  const currentDOW = ((cycleDay - 1) % 7) + 1; 
+  
   const h = now.getHours();
   const m = now.getMinutes();
   const s = now.getSeconds();
 
   const isSecondHalf = m >= 30;
 
-  // Znajdujemy konfigurację dla obecnej godziny
-  const hourConfig = scheduleConfig.find(x => x.hour === h) || scheduleConfig[0];
-  const folder = hourConfig.folder;
-  const seriesVideos = videosDB[folder];
+  // Szukanie konfiguracji dla obecnej godziny
+  const hourConfigs = scheduleConfig.filter(x => x.hour === h);
+  
+  // Szukamy takiej, która pasuje do dzisiejszego dnia tygodnia, albo takiej, która leci codziennie (brak 'days')
+  let hourConfig = hourConfigs.find(x => !x.days || x.days.includes(currentDOW));
+  
+  // Zabezpieczenie: jeśli ktoś zepsuł JSON i nie ma nic na ten dzień, weź pierwszą z brzegu z tej godziny
+  if (!hourConfig) hourConfig = hourConfigs[0] || scheduleConfig[0];
 
-  if (!seriesVideos || seriesVideos.length === 0) {
-    document.getElementById("info").innerText = `BRAK FILMÓW W FOLDERZE: ${folder} 💀`;
+  const seriesFolders = hourConfig.folders || [hourConfig.folder];
+  let allEpisodes = [];
+  
+  for (const f of seriesFolders) {
+    if (videosDB[f]) {
+      videosDB[f].forEach(fileName => {
+        allEpisodes.push({ folder: f, file: fileName });
+      });
+    }
+  }
+
+  if (allEpisodes.length === 0) {
+    document.getElementById("info").innerText = `BRAK FILMÓW W FOLDERACH: ${seriesFolders.join(', ')} 💀`;
     return;
   }
 
-  // LOGIKA ODCINKÓW (Wczorajszy + Dzisiejszy)
-  let targetIndex = cycleDay - 1; 
-  if (isSecondHalf) {
-    targetIndex += 1; // Przeskok na "dzisiejszy nowy"
+  // LOGIKA WYLICZANIA ODCINKÓW - Liczy tylko te dni, w które dany blok faktycznie był emitowany
+  let baseIndex = 0;
+  
+  if (hourConfig.days && hourConfig.days.length > 0) {
+    const fullWeeks = Math.floor((cycleDay - 1) / 7);
+    const occurrencesInFullWeeks = fullWeeks * hourConfig.days.length;
+    
+    let occurrencesThisWeek = 0;
+    for(let d of hourConfig.days) {
+        if (d <= currentDOW) occurrencesThisWeek++;
+    }
+    
+    // Zapobiega ujemnemu indeksowi w przypadku błędów
+    baseIndex = Math.max(0, occurrencesInFullWeeks + occurrencesThisWeek - 1);
+  } else {
+    baseIndex = cycleDay - 1; // Codziennie
   }
 
-  // Zapętlenie odcinków jeśli lista się skończy
-  const safeIndex = targetIndex % seriesVideos.length;
-  const currentFileName = seriesVideos[safeIndex];
+  let targetIndex = baseIndex; 
+  if (isSecondHalf) {
+    targetIndex += 1; // Przeskok na nową część
+  }
 
-  // Generowanie linku do R2 z kodowaniem URL
-  const videoUrl = `https://aelwyd.space/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
-  
-  const slotId = `${folder}-day${cycleDay}-${isSecondHalf ? 'new' : 'old'}`;
+  const safeIndex = targetIndex % allEpisodes.length;
+  const currentEpisode = allEpisodes[safeIndex];
+
+  const currentFolder = currentEpisode.folder;
+  const currentFileName = currentEpisode.file;
+
+  const videoUrl = `https://aelwyd.space/${encodeURIComponent(currentFolder)}/${encodeURIComponent(currentFileName)}`;
+  const slotId = `${currentFolder}-${currentFileName}-${isSecondHalf ? 'new' : 'old'}`;
   const video = document.getElementById("player");
   const offsetSec = (m % 30) * 60 + s;
 
-  // ZMIANA WIDEO
   if (video.dataset.slotId !== slotId) {
     video.dataset.slotId = slotId;
     video.src = videoUrl;
@@ -215,8 +241,6 @@ function sync() {
 
     video.onloadedmetadata = () => {
       video.dataset.epDuration = video.duration;
-      
-      // Jeśli czas minął, włącz od razu ambient
       if (offsetSec >= video.duration) {
         playAmbient();
       } else {
@@ -228,9 +252,7 @@ function sync() {
     video.onended = () => {
       if (!currentIsAmbient) playAmbient();
     };
-
   } else {
-    // Ciągła kontrola, czy w trakcie trwania bloku wideo się skończyło
     if (!currentIsAmbient && video.readyState >= 1) {
       if (offsetSec >= parseFloat(video.dataset.epDuration || 99999)) {
         playAmbient();
@@ -238,13 +260,14 @@ function sync() {
     }
   }
 
-  // Aktualizacja UI
   const formatTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 AMBIENT' : '📺 TRWA';
-  const episodeInfo = isSecondHalf ? 'Premiera' : 'Powtórka z wczoraj';
+  const episodeInfo = isSecondHalf ? 'Premiera' : 'Powtórka';
+
+  const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
 
   document.getElementById("info").innerText =
-    `▶ Dzień ${cycleDay}/30 | ${formatTime} | ${hourConfig.title} | Odc. ${safeIndex + 1} (${episodeInfo}) | ${typeLabel}`;
+    `▶ Dzień ${cycleDay}/182 | ${formatTime} | ${hourConfig.title} | ${currentFolder} Odc. ${episodeIndexInCurrentSeries} (${episodeInfo}) | ${typeLabel}`;
 }
 
 startTV();
