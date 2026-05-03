@@ -15,20 +15,21 @@
       width: 100vw;
       height: 100vh;
       object-fit: cover;
-      /* Sprawia, że pasek postępu jest widoczny, ale nie reaguje na kliknięcia (nie da się przewijać) */
-      pointer-events: none; 
     }
 
-    /* Kontener dla video, żebyśmy mogli kliknąć w body/tło i wymusić play, ale nie w sam pasek */
-    #video-container {
-      width: 100vw;
-      height: 100vh;
-      cursor: default;
+    /* Ukrycie natywnego przycisku Play/Pause w przeglądarkach WebKit/Blink */
+    video::-webkit-media-controls-play-button {
+      display: none !important;
+    }
+
+    /* Zablokowanie klikania w pasek postępu (timeline) */
+    video::-webkit-media-controls-timeline {
+      pointer-events: none !important;
     }
 
     #info {
       position: absolute;
-      top: 15px; /* Przeniesiono z bottom na top (lewy górny róg) */
+      top: 15px; /* Zmienione na lewy górny róg */
       left: 15px;
       color: white;
       font-family: Arial;
@@ -37,50 +38,35 @@
       background: rgba(0,0,0,0.7);
       padding: 8px 12px;
       border-radius: 8px;
-      pointer-events: none; /* Pasek info nie przeszkadza w niczym */
     }
   </style>
 </head>
 
 <body>
-
-<div id="video-container">
-  <video id="player" autoplay muted controls controlsList="nodownload noplaybackrate"></video>
-</div>
-
+<!-- controlsList blokuje pobieranie i zmianę prędkości odtwarzania -->
+<video id="player" autoplay muted controls controlsList="nodownload noplaybackrate"></video>
 <div id="info">Inicjalizacja systemu...</div>
 
 <script>
-// ==========================================
-// KONFIGURACJA ŚCIEŻKI DO CLOUDFLARE R2
-// ==========================================
-const URL_PREFIX = "https://aelwyd.space"; 
-// ==========================================
-
 let scheduleConfig = [];
-let videosDB = {}; 
-const ambientFile = `${URL_PREFIX}/ambient.mp4`;
+let videosDB = {}; // Baza wideo z CSV (klucz: nazwa folderu, wartość: posortowana tablica plików)
+const ambientFile = "https://aelwyd.space/ambient.mp4";
 let currentIsAmbient = false;
 
-// Blokada pauzowania - jeśli wideo zostanie zapauzowane, natychmiast odtwarzaj dalej
-const player = document.getElementById("player");
-player.addEventListener('pause', () => {
-    player.play().catch(() => {});
+// Ochrona przed pauzowaniem (np. z poziomu klawiatury lub sprzętowych klawiszy multimedialnych)
+const videoPlayerElement = document.getElementById("player");
+videoPlayerElement.addEventListener("pause", () => {
+    videoPlayerElement.play().catch(() => {});
 });
 
-// Zapobieganie pauzowaniu spacją
-window.addEventListener('keydown', (e) => {
-    if (e.code === "Space") {
-        e.preventDefault();
-    }
-});
-
+// 1. Oblicza aktualny dzień od 1 do 30
 function getCycleDay() {
   const now = new Date();
   const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
   return (Math.floor(localEpochMs / 86400000) % 30) + 1;
 }
 
+// 2. Parser pliku CSV z Twojego formatu
 async function loadCSV() {
   const res = await fetch("ramowka.csv");
   const text = await res.text();
@@ -88,8 +74,10 @@ async function loadCSV() {
   const lines = text.trim().split('\n');
   const db = {};
 
+  // Pomijamy pierwszy wiersz (nagłówki)
   for(let i = 1; i < lines.length; i++) {
     const row = lines[i];
+    // Dzielenie kolumn po '";"' i usunięcie skrajnych cudzysłowów
     const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
     if (cols.length < 3) continue;
 
@@ -97,6 +85,7 @@ async function loadCSV() {
     const fileName = cols[1];
     const ext = cols[2];
 
+    // Wyciąganie nazwy folderu ze ścieżki Windows
     const pathParts = fullPath.split('\\');
     const folderName = pathParts[pathParts.length - 1];
 
@@ -104,6 +93,7 @@ async function loadCSV() {
     db[folderName].push(fileName + ext);
   }
 
+  // Naturalne sortowanie plików w każdym folderze (1 przed 10)
   for (const folder in db) {
     db[folder].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
   }
@@ -140,7 +130,7 @@ function playAmbient() {
   video.onloadedmetadata = () => {
     const now = new Date();
     const offsetSec = (now.getMinutes() % 30) * 60 + now.getSeconds();
-    const epDur = parseFloat(video.dataset.epDuration || 1380); 
+    const epDur = parseFloat(video.dataset.epDuration || 1380); // Zakładamy ok. 23 min
     video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
     video.play().catch(() => {});
   };
@@ -154,6 +144,8 @@ function sync() {
   const s = now.getSeconds();
 
   const isSecondHalf = m >= 30;
+
+  // Znajdujemy konfigurację dla obecnej godziny
   const hourConfig = scheduleConfig.find(x => x.hour === h) || scheduleConfig[0];
   const folder = hourConfig.folder;
   const seriesVideos = videosDB[folder];
@@ -163,29 +155,34 @@ function sync() {
     return;
   }
 
+  // LOGIKA ODCINKÓW (Wczorajszy + Dzisiejszy)
   let targetIndex = cycleDay - 1; 
   if (isSecondHalf) {
-    targetIndex += 1; 
+    targetIndex += 1; // Przeskok na "dzisiejszy nowy"
   }
 
+  // Zapętlenie odcinków jeśli lista się skończy
   const safeIndex = targetIndex % seriesVideos.length;
   const currentFileName = seriesVideos[safeIndex];
 
-  const videoUrl = `${URL_PREFIX}/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
+  // Generowanie linku do R2 z kodowaniem URL
+  const videoUrl = `https://aelwyd.space/${encodeURIComponent(folder)}/${encodeURIComponent(currentFileName)}`;
   
   const slotId = `${folder}-day${cycleDay}-${isSecondHalf ? 'new' : 'old'}`;
   const video = document.getElementById("player");
   const offsetSec = (m % 30) * 60 + s;
 
+  // ZMIANA WIDEO
   if (video.dataset.slotId !== slotId) {
     video.dataset.slotId = slotId;
     video.src = videoUrl;
     currentIsAmbient = false;
-    
     video.load();
 
     video.onloadedmetadata = () => {
       video.dataset.epDuration = video.duration;
+      
+      // Jeśli czas minął, włącz od razu ambient
       if (offsetSec >= video.duration) {
         playAmbient();
       } else {
@@ -199,6 +196,7 @@ function sync() {
     };
 
   } else {
+    // Ciągła kontrola, czy w trakcie trwania bloku wideo się skończyło
     if (!currentIsAmbient && video.readyState >= 1) {
       if (offsetSec >= parseFloat(video.dataset.epDuration || 99999)) {
         playAmbient();
@@ -206,6 +204,7 @@ function sync() {
     }
   }
 
+  // Aktualizacja UI
   const formatTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 AMBIENT' : '📺 TRWA';
   const episodeInfo = isSecondHalf ? 'Premiera' : 'Powtórka z wczoraj';
