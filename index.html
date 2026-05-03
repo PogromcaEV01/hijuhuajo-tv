@@ -256,6 +256,7 @@
           <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
         </svg>
         <div id="settings-menu">
+          <div class="menu-item" id="btn-schedule">Harmonogram</div>
           <div class="menu-item" id="btn-pip">Obraz w obrazie</div>
           <div class="menu-item" id="btn-toggle-info">Ukryj informacje</div>
         </div>
@@ -284,6 +285,7 @@ const infoDiv = document.getElementById("info");
 
 const btnMenu = document.getElementById("btn-menu");
 const settingsMenu = document.getElementById("settings-menu");
+const btnSchedule = document.getElementById("btn-schedule");
 const btnPip = document.getElementById("btn-pip");
 const btnToggleInfo = document.getElementById("btn-toggle-info");
 
@@ -380,7 +382,12 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// 5. Opcja: Obraz w obrazie (PiP)
+// 5. Opcja: Harmonogram
+btnSchedule.addEventListener("click", () => {
+  window.location.href = "schedule.html"; 
+});
+
+// 6. Opcja: Obraz w obrazie (PiP)
 btnPip.addEventListener("click", async () => {
   try {
     if (document.pictureInPictureElement) {
@@ -394,7 +401,7 @@ btnPip.addEventListener("click", async () => {
   settingsMenu.classList.remove("show");
 });
 
-// 6. Opcja: Ukryj / Pokaż informacje
+// 7. Opcja: Ukryj / Pokaż informacje
 btnToggleInfo.addEventListener("click", () => {
   infoDiv.classList.toggle("hidden-info");
   if (infoDiv.classList.contains("hidden-info")) {
@@ -405,7 +412,7 @@ btnToggleInfo.addEventListener("click", () => {
   settingsMenu.classList.remove("show");
 });
 
-// 7. Pełny ekran - Zmodyfikowany pod kątem PC vs Telefon
+// 8. Pełny ekran - Zmodyfikowany pod kątem PC vs Telefon
 btnFullscreen.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     // Szybkie sprawdzenie, czy użytkownik jest na telefonie/tablecie
