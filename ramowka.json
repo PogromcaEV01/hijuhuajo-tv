@@ -2,163 +2,163 @@
   {
     "hour": 0,
     "folders": ["High School DxD", "High school of the dead"],
-    "title": "Nocne Maratony (Codziennie)"
+    "title": "nocne maratony (codziennie)"
   },
   {
     "hour": 1,
     "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"],
-    "title": "Nocne Tajemnice (Codziennie)"
+    "title": "nocne tajemnice (codziennie)"
   },
   {
     "hour": 2,
     "folders": ["[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)"],
-    "title": "Lupin - Klasyka Nocą"
+    "title": "lupin - klasyka nocą"
   },
   {
     "hour": 3,
     "folders": ["[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"],
-    "title": "Lupin - Klasyka Nocą cz. 2"
+    "title": "lupin - klasyka nocą cz. 2"
   },
   {
     "hour": 4,
     "folders": ["[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)"],
-    "title": "Lupin - Klasyka Nocą cz. 3"
+    "title": "lupin - klasyka nocą cz. 3"
   },
   {
     "hour": 5,
     "folders": ["Extras"],
-    "title": "Poranny Rozruch (Codziennie)"
+    "title": "poranny rozruch (codziennie)"
   },
   {
     "hour": 6,
     "days": [1, 2, 3, 4, 5],
     "folders": ["azumanga"],
-    "title": "Poranek z Azumangą (Pon-Pt)"
+    "title": "poranek z azumangą (pon-pt)"
   },
   {
     "hour": 6,
     "days": [6, 7],
     "folders": ["flying witch"],
-    "title": "Poranek z Magią (Sob-Nie)"
+    "title": "poranek z magią (sob-nie)"
   },
   {
     "hour": 7,
     "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
-    "title": "One Piece - Śniadanie z Piratami"
+    "title": "one piece - śniadanie z piratami"
   },
   {
     "hour": 8,
     "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
-    "title": "One Piece - Śniadanie z Piratami vol. 2"
+    "title": "one piece - śniadanie z piratami vol. 2"
   },
   {
     "hour": 9,
     "days": [1, 2, 3, 4, 5],
     "folders": ["Shikanoko Nokonoko Koshitantan"],
-    "title": "Szkolne Absurdy (Pon-Pt)"
+    "title": "szkolne absurdy (pon-pt)"
   },
   {
     "hour": 9,
     "days": [6, 7],
     "folders": ["Gekkan Shoujo Nozaki-kun"],
-    "title": "Szkolne Absurdy (Sob-Nie)"
+    "title": "szkolne absurdy (sob-nie)"
   },
   {
     "hour": 10,
     "folders": ["Ijiranaide, Nagatoro-san"],
-    "title": "Przedpołudniowy Uśmiech (Codziennie)"
+    "title": "przedpołudniowy uśmiech (codziennie)"
   },
   {
     "hour": 11,
     "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu"],
-    "title": "Klasa Elity na Żywo (Codziennie)"
+    "title": "klasa elity na żywo (codziennie)"
   },
   {
     "hour": 12,
     "folders": ["[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"],
-    "title": "Południe z Lupinem (Codziennie)"
+    "title": "południe z lupinem (codziennie)"
   },
   {
     "hour": 13,
     "folders": ["[Dodgy] Star Ocean EX [BD 480p]"],
-    "title": "Kosmiczna Przygoda (Codziennie)"
+    "title": "kosmiczna przygoda (codziennie)"
   },
   {
     "hour": 14,
     "folders": ["Seihou Bukyou Outlaw Star"],
-    "title": "Outlaw Star Wczesnym Popołudniem"
+    "title": "outlaw star wczesnym popołudniem"
   },
   {
     "hour": 15,
     "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"],
-    "title": "Popołudniowa Tajemnica"
+    "title": "popołudniowa tajemnica"
   },
   {
     "hour": 16,
     "days": [1, 2, 3, 4, 5],
     "folders": ["flying witch"],
-    "title": "Magiczne Popołudnie (Pon-Pt)"
+    "title": "magiczne popołudnie (pon-pt)"
   },
   {
     "hour": 16,
     "days": [6, 7],
     "folders": ["Zombieland Saga S01 1080p Dual Audio BDRip 10 bits DD x265-EMBER"],
-    "title": "Zombiakowy Weekend (Sob-Nie)"
+    "title": "zombiakowy weekend (sob-nie)"
   },
   {
     "hour": 17,
     "days": [1, 2, 3, 4, 5],
     "folders": ["Gekkan Shoujo Nozaki-kun"],
-    "title": "Komediowy Chillout (Pon-Pt)"
+    "title": "komediowy chillout (pon-pt)"
   },
   {
     "hour": 17,
     "days": [6, 7],
     "folders": ["Zombieland Saga S02 1080p Dual Audio BDRip 10 bits DD x265-EMBER"],
-    "title": "Zombiakowy Weekend S02 (Sob-Nie)"
+    "title": "zombiakowy weekend s02 (sob-nie)"
   },
   {
     "hour": 18,
     "folders": ["aot s1 25 odcinków_small"],
-    "title": "Wieczorne Emocje - Attack on Titan"
+    "title": "wieczorne emocje - attack on titan"
   },
   {
     "hour": 19,
     "folders": ["re zero"],
-    "title": "Re:Zero - Wieczór w Innym Świecie"
+    "title": "re:zero - wieczór w innym świecie"
   },
   {
     "hour": 20,
     "days": [1, 2, 3, 4, 5],
     "folders": ["initial D"],
-    "title": "Prime Time: Eurobeat Drift (Pon-Pt)"
+    "title": "prime time: eurobeat drift (pon-pt)"
   },
   {
     "hour": 20,
     "days": [6, 7],
     "folders": ["aot s1 25 odcinków_small", "re zero"],
-    "title": "Prime Time: Weekendowe Hity (Sob-Nie)"
+    "title": "prime time: weekendowe hity (sob-nie)"
   },
   {
     "hour": 21,
     "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
-    "title": "Wieczór z One Piece (Codziennie)"
+    "title": "wieczór z one piece (codziennie)"
   },
   {
     "hour": 22,
     "days": [1, 2, 3, 4, 5],
     "folders": ["High School DxD"],
-    "title": "Nocne Pikanterie (Pon-Pt)"
+    "title": "nocne pikanterie (pon-pt)"
   },
   {
     "hour": 22,
     "days": [6, 7],
     "folders": ["High school of the dead"],
-    "title": "Nocne Pikanterie - Zombie (Sob-Nie)"
+    "title": "nocne pikanterie - zombie (sob-nie)"
   },
   {
     "hour": 23,
     "folders": ["azumanga", "Shikanoko Nokonoko Koshitantan"],
-    "title": "Późna Noc Komediowa (Codziennie)"
+    "title": "późna noc komediowa (codziennie)"
   }
 ]
