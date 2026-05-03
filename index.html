@@ -2,6 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
+  <!-- Blokada powiększania palcami na urządzeniach mobilnych -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Heisenberg TV 😏</title>
   <!-- Dodany favicon -->
@@ -10,8 +11,8 @@
     body {
       margin: 0;
       background: radial-gradient(circle at center, #2a2a2a 0%, #000000 100%);
-      height: 100vh;
-      height: 100dvh;
+      height: 100vh; /* Fallback dla starszych przeglądarek */
+      height: 100dvh; /* Dynamiczna wysokość rozwiązująca problem ucinania na mobilkach */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -404,10 +405,17 @@ btnToggleInfo.addEventListener("click", () => {
   settingsMenu.classList.remove("show");
 });
 
-// 7. Pełny ekran
+// 7. Pełny ekran - Zmodyfikowany pod kątem PC vs Telefon
 btnFullscreen.addEventListener("click", () => {
   if (!document.fullscreenElement) {
-    tvScreen.requestFullscreen().catch(err => {
+    // Szybkie sprawdzenie, czy użytkownik jest na telefonie/tablecie
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Jeśli telefon -> pełny ekran dla całej strony (z ramkami). 
+    // Jeśli PC -> pełny ekran tylko dla ekranu TV (bez ramek).
+    const elementToFullscreen = isMobile ? document.documentElement : tvScreen;
+
+    elementToFullscreen.requestFullscreen().catch(err => {
       console.error(`Błąd wejścia w tryb pełnoekranowy: ${err.message}`);
     });
   } else {
