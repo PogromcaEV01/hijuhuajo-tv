@@ -626,7 +626,7 @@ function sync() {
   const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
 
   document.getElementById("info").innerText =
-    `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${hourConfig.title} | ${currentFolder} odc. ${episodeIndexInCurrentSeries} (${episodeInfo}) | ${typeLabel}`;
+    `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${hourConfig.title} | ${currentFolder} odc. ${episodeIndexInCurrentSeries} (${episodeInfo})`;
 }
 
 startTV();
