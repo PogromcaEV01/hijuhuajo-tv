@@ -26,10 +26,33 @@
             max-width: 800px;
             width: 100%;
         }
+
+        /* --- STYL PRZYCISKU POWROTU --- */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: var(--card-bg);
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 1px solid rgba(187, 134, 252, 0.3);
+            margin-bottom: 20px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .back-btn:hover {
+            background-color: var(--accent);
+            color: #121212;
+            transform: translateX(-5px); /* Lekkie przesunięcie w lewo przy najeździe */
+        }
         
         h1 {
             text-align: center;
             color: var(--accent);
+            margin-top: 0;
             margin-bottom: 30px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -108,6 +131,15 @@
 <body>
 
 <div class="schedule-container">
+    <!-- Przycisk powrotu do odtwarzacza -->
+    <a href="index.html" class="back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Wróć do TV
+    </a>
+
     <h1>📺 Harmonogram Transmisji</h1>
     <div id="schedule-list"></div>
 </div>
