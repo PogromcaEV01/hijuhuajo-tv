@@ -2,10 +2,8 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <!-- Blokada powiększania palcami na urządzeniach mobilnych -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Heisenberg TV 😏</title>
-  <!-- Dodany favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
   <style>
     body {
@@ -222,10 +220,8 @@
     <video id="player" autoplay muted></video>
     <div id="info">Inicjalizacja systemu...</div>
 
-    <!-- WŁASNY PASEK ODTWARZANIA -->
     <div id="custom-controls">
       
-      <!-- Głośność z wysuwanym suwakiem -->
       <div class="vol-wrapper">
         <svg id="btn-mute" class="ctrl-icon" viewBox="0 0 24 24">
           <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
@@ -235,22 +231,18 @@
         </div>
       </div>
 
-      <!-- Pasek postępu -->
       <div id="progress-container">
         <div id="progress-bar">
           <div id="progress-thumb"></div>
         </div>
       </div>
 
-      <!-- Czas do końca -->
       <span id="time-display">-0:00</span>
 
-      <!-- Pełny ekran (Teraz PRZED menu) -->
       <svg id="btn-fullscreen" class="ctrl-icon" viewBox="0 0 24 24">
         <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
       </svg>
 
-      <!-- Menu: Trzy kropki (Teraz PO PRAWEJ stronie) -->
       <div class="menu-wrapper">
         <svg id="btn-menu" class="ctrl-icon" viewBox="0 0 24 24">
           <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
@@ -259,6 +251,7 @@
           <div class="menu-item" id="btn-schedule">Ramówka</div>
           <div class="menu-item" id="btn-pip">Obraz w obrazie</div>
           <div class="menu-item" id="btn-toggle-info">Ukryj informacje</div>
+          <div class="menu-item" id="btn-mobile-fullscreen" style="display: none;">Pełny ekran (bez ramki)</div>
         </div>
       </div>
 
@@ -288,6 +281,7 @@ const settingsMenu = document.getElementById("settings-menu");
 const btnSchedule = document.getElementById("btn-schedule");
 const btnPip = document.getElementById("btn-pip");
 const btnToggleInfo = document.getElementById("btn-toggle-info");
+const btnMobileFullscreen = document.getElementById("btn-mobile-fullscreen");
 
 // --- LOGIKA ZANIKANIA PASKA (AUTO-HIDE) ---
 let activityTimeout;
@@ -410,6 +404,23 @@ btnToggleInfo.addEventListener("click", () => {
     btnToggleInfo.innerText = "Ukryj informacje";
   }
   settingsMenu.classList.remove("show");
+});
+
+// --- NOWA OPCJA: Pełny ekran bez ramki (Tylko Mobile) ---
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+if (isMobileDevice) {
+  btnMobileFullscreen.style.display = "block";
+}
+
+btnMobileFullscreen.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    tvScreen.requestFullscreen().catch(err => {
+      console.error(`Błąd wejścia w tryb pełnoekranowy: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+  settingsMenu.classList.remove("show"); // Zamyka menu po kliknięciu
 });
 
 // 8. Pełny ekran - Zmodyfikowany pod kątem PC vs Telefon
