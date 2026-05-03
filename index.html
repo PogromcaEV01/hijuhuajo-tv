@@ -560,16 +560,6 @@ function sync() {
       return f.join('|') === programKey;
   });
 
-  let totalPastEpisodes = 0;
-  for (let d = 1; d < cycleDay; d++) {
-      const dow = ((d - 1) % 7) + 1;
-      for (const cfg of programConfigs) {
-          if (runsOnDOW(cfg, dow)) {
-              totalPastEpisodes++;
-          }
-      }
-  }
-
   const todaysConfigs = programConfigs.filter(cfg => runsOnDOW(cfg, currentDOW)).sort((a,b) => a.hour - b.hour);
   
   const H = todaysConfigs.length;
@@ -577,9 +567,43 @@ function sync() {
 
   const i = todaysConfigs.findIndex(cfg => cfg.hour === h);
   const j = isSecondHalf ? 1 : 0;
-  const slotIndex = i * 2 + j;
+  const slotIndex = i * 2 + j; // Obecny, półgodzinny slot w dzisiejszym bloku
 
-  const targetIndex = totalPastEpisodes - H + slotIndex;
+  // 1. Obliczamy, na którym odcinku zakończył się wczorajszy dzień
+  let baseEpisodeIndex = 0;
+  for (let d = 1; d < cycleDay; d++) {
+    const dow = ((d - 1) % 7) + 1;
+    const configsDayD = programConfigs.filter(cfg => runsOnDOW(cfg, dow));
+    
+    if (configsDayD.length > 0) {
+      const slotsDayD = configsDayD.length * 2;
+      const isMarathonDay = configsDayD.some(cfg => cfg.marathon);
+      
+      if (isMarathonDay) {
+        // Jeśli dzień był maratonem, fabuła "poszła do przodu" tylko o połowę slotów (nowe odcinki)
+        baseEpisodeIndex += Math.ceil(slotsDayD / 2);
+      } else {
+        // Zwykły dzień - każdy slot to nowy odcinek
+        baseEpisodeIndex += slotsDayD;
+      }
+    }
+  }
+
+  // 2. Ustalamy indeks dla aktualnie trwającego slota
+  const isMarathonToday = todaysConfigs.some(cfg => cfg.marathon);
+  let targetIndex;
+
+  if (isMarathonToday) {
+    // W maratonie cofamy bazowy indeks o połowę wczorajszych nowości, by zagrać powtórki,
+    // a potem płynnie przejść do dzisiejszych nowości.
+    const repeatCount = Math.floor((H * 2) / 2);
+    targetIndex = baseEpisodeIndex - repeatCount + slotIndex;
+  } else {
+    // Normalny tryb leci po kolei
+    targetIndex = baseEpisodeIndex + slotIndex;
+  }
+
+  // 3. Zapętlanie serii, by uniknąć błędów ujemnych wartości na starcie i wyjścia poza tablicę
   const safeIndex = ((targetIndex % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
 
   const currentEpisode = allEpisodes[safeIndex];
@@ -622,8 +646,13 @@ function sync() {
 
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 ambient' : '📺 trwa';
-  const episodeInfo = slotIndex < H ? 'w' : 'd';
   const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
+
+  let episodeInfo = '';
+  if (isMarathonToday) {
+    // Ponieważ slotIndex rośnie od 0, warunek < H obejmuje dokładnie pierwszą połowę półgodzinnych slotów
+    episodeInfo = slotIndex < H ? '(powtórka z wczoraj)' : '(dzisiejsza premiera)';
+  }
 
   document.getElementById("info").innerText =
     `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${hourConfig.title} | ${currentFolder} odc. ${episodeIndexInCurrentSeries} ${episodeInfo}`;
