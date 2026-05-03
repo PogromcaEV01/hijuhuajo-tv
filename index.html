@@ -92,7 +92,6 @@ videoPlayerElement.addEventListener("pause", () => {
     videoPlayerElement.play().catch(() => {});
 });
 
-// Zwraca dzień całego cyklu: 1 do 182
 function getCycleDay() {
   const now = new Date();
   const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
@@ -163,9 +162,6 @@ function playAmbient() {
 function sync() {
   const now = new Date();
   const cycleDay = getCycleDay();
-  
-  // Obliczenie aktualnego dnia tygodnia na podstawie cycleDay (1=Poniedziałek, 7=Niedziela)
-  // Zakładamy, że cykl zaczął się w poniedziałek
   const currentDOW = ((cycleDay - 1) % 7) + 1; 
   
   const h = now.getHours();
@@ -174,18 +170,14 @@ function sync() {
 
   const isSecondHalf = m >= 30;
 
-  // Szukanie konfiguracji dla obecnej godziny
   const hourConfigs = scheduleConfig.filter(x => x.hour === h);
-  
-  // Szukamy takiej, która pasuje do dzisiejszego dnia tygodnia, albo takiej, która leci codziennie (brak 'days')
   let hourConfig = hourConfigs.find(x => !x.days || x.days.includes(currentDOW));
-  
-  // Zabezpieczenie: jeśli ktoś zepsuł JSON i nie ma nic na ten dzień, weź pierwszą z brzegu z tej godziny
   if (!hourConfig) hourConfig = hourConfigs[0] || scheduleConfig[0];
 
   const seriesFolders = hourConfig.folders || [hourConfig.folder];
+  const programKey = seriesFolders.join('|');
+
   let allEpisodes = [];
-  
   for (const f of seriesFolders) {
     if (videosDB[f]) {
       videosDB[f].forEach(fileName => {
@@ -199,37 +191,57 @@ function sync() {
     return;
   }
 
-  // LOGIKA WYLICZANIA ODCINKÓW - Liczy tylko te dni, w które dany blok faktycznie był emitowany
-  let baseIndex = 0;
+  // --- NOWA LOGIKA MARATONU (Połowa to powtórki, połowa to premiery) ---
+  const runsOnDOW = (cfg, dow) => !cfg.days || cfg.days.includes(dow);
   
-  if (hourConfig.days && hourConfig.days.length > 0) {
-    const fullWeeks = Math.floor((cycleDay - 1) / 7);
-    const occurrencesInFullWeeks = fullWeeks * hourConfig.days.length;
-    
-    let occurrencesThisWeek = 0;
-    for(let d of hourConfig.days) {
-        if (d <= currentDOW) occurrencesThisWeek++;
-    }
-    
-    // Zapobiega ujemnemu indeksowi w przypadku błędów
-    baseIndex = Math.max(0, occurrencesInFullWeeks + occurrencesThisWeek - 1);
-  } else {
-    baseIndex = cycleDay - 1; // Codziennie
+  const programConfigs = scheduleConfig.filter(cfg => {
+      const f = cfg.folders || [cfg.folder];
+      return f.join('|') === programKey;
+  });
+
+  let totalPastEpisodes = 0;
+  // 1. Zliczamy wyemitowane godziny z poprzednich dni
+  for (let d = 1; d < cycleDay; d++) {
+      const dow = ((d - 1) % 7) + 1;
+      for (const cfg of programConfigs) {
+          if (runsOnDOW(cfg, dow)) {
+              totalPastEpisodes++;
+          }
+      }
   }
 
-  let targetIndex = baseIndex; 
-  if (isSecondHalf) {
-    targetIndex += 1; // Przeskok na nową część
-  }
+  // 2. Pobieramy wszystkie konfiguracje TEGO SAMEGO serialu na DZISIAJ
+  const todaysConfigs = programConfigs.filter(cfg => runsOnDOW(cfg, currentDOW)).sort((a,b) => a.hour - b.hour);
+  
+  // H to całkowita liczba godzin tego maratonu dzisiaj
+  const H = todaysConfigs.length;
+  if (H === 0) return;
 
-  const safeIndex = targetIndex % allEpisodes.length;
+  // i to indeks obecnej godziny w dzisiejszym maratonie (od 0)
+  const i = todaysConfigs.findIndex(cfg => cfg.hour === h);
+  
+  // j to połowa godziny (0 lub 1)
+  const j = isSecondHalf ? 1 : 0;
+
+  // slotIndex to absolutny numer "półgodzinki" w dzisiejszym maratonie (od 0 do 2H - 1)
+  const slotIndex = i * 2 + j;
+
+  // Zabezpieczony matematycznie indeks odcinka. 
+  // Pierwsze 'H' slotów celuje we wczorajsze odcinki, reszta idzie do przodu.
+  const targetIndex = totalPastEpisodes - H + slotIndex;
+
+  // Bezpieczne modulo - musi obsługiwać sytuację gdy na początku wynik będzie na minusie
+  const safeIndex = ((targetIndex % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
+  // -------------------------------------------------------------------
+
   const currentEpisode = allEpisodes[safeIndex];
-
   const currentFolder = currentEpisode.folder;
   const currentFileName = currentEpisode.file;
 
   const videoUrl = `https://aelwyd.space/${encodeURIComponent(currentFolder)}/${encodeURIComponent(currentFileName)}`;
-  const slotId = `${currentFolder}-${currentFileName}-${isSecondHalf ? 'new' : 'old'}`;
+  
+  // Unikalne ID odtwarzacza chroniące przed odświeżaniem tego samego wideo
+  const slotId = `${currentFolder}-${currentFileName}-${slotIndex}`;
   const video = document.getElementById("player");
   const offsetSec = (m % 30) * 60 + s;
 
@@ -262,7 +274,9 @@ function sync() {
 
   const formatTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 AMBIENT' : '📺 TRWA';
-  const episodeInfo = isSecondHalf ? 'Premiera' : 'Powtórka';
+  
+  // Pierwsza połowa wszystkich slotów maratonu to powtórki, druga połowa to premiery
+  const episodeInfo = slotIndex < H ? 'Powtórka' : 'Premiera';
 
   const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
 
