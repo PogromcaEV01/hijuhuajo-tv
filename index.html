@@ -384,7 +384,7 @@ document.addEventListener("click", (e) => {
 
 // 5. Opcja: Harmonogram
 btnSchedule.addEventListener("click", () => {
-  window.location.href = "schedule.html"; 
+  window.location.href = "ramowka.html"; 
 });
 
 // 6. Opcja: Obraz w obrazie (PiP)
@@ -444,7 +444,7 @@ function getCycleDay() {
 }
 
 async function loadCSV() {
-  const res = await fetch("ramowka.csv");
+  const res = await fetch("anime_lista.csv");
   const text = await res.text();
   const lines = text.trim().split('\n');
   const db = {};
@@ -473,7 +473,7 @@ async function loadCSV() {
 
 async function startTV() {
   try {
-    const res = await fetch("schedule.json");
+    const res = await fetch("ramowka.json");
     scheduleConfig = await res.json();
     document.getElementById("info").innerText = "Pobieranie bazy wideo...";
     videosDB = await loadCSV();
