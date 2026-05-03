@@ -622,7 +622,7 @@ function sync() {
 
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   const typeLabel = currentIsAmbient ? '🌿 ambient' : '📺 trwa';
-  const episodeInfo = slotIndex < H ? 'powtórka' : 'premiera';
+  const episodeInfo = slotIndex < H ? 'wczorajszy' : 'dzisiejszy';
   const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
 
   document.getElementById("info").innerText =
