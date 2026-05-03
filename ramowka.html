@@ -10,6 +10,7 @@
             --card-bg: #1e1e1e;
             --text-main: #e0e0e0;
             --accent: #bb86fc;
+            --accent-hover: #9c4dff;
         }
         
         body {
@@ -27,12 +28,11 @@
             width: 100%;
         }
 
-        /* --- ZMIENIONY STYL PRZYCISKU POWROTU --- */
         .back-btn {
-            position: fixed; /* Przykleja przycisk do ekranu */
-            top: 20px;       /* Odległość od góry */
-            left: 20px;      /* Odległość od lewej */
-            z-index: 100;    /* Gwarantuje, że przycisk będzie zawsze na wierzchu */
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -49,16 +49,49 @@
         .back-btn:hover {
             background-color: var(--accent);
             color: #121212;
-            transform: scale(1.05); /* Delikatne powiększenie zamiast przesuwania */
+            transform: scale(1.05);
         }
         
         h1 {
             text-align: center;
             color: var(--accent);
-            margin-top: 60px; /* Zrobienie miejsca na górze, by przycisk nie zasłaniał tytułu na telefonach */
-            margin-bottom: 30px;
+            margin-top: 60px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 2px;
+        }
+
+        /* Sekcja wyboru daty */
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .controls label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: var(--accent);
+        }
+
+        .controls input[type="date"] {
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--accent);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .controls input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8) sepia(1) hue-rotate(200deg) saturate(5);
+            cursor: pointer;
         }
         
         .schedule-item {
@@ -100,37 +133,48 @@
         .title {
             font-size: 1.2rem;
             font-weight: bold;
-            margin: 0 0 8px 0;
+            margin: 0 0 12px 0;
             color: #ffffff;
-        }
-        
-        .days {
-            font-size: 0.85rem;
-            color: var(--accent);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
         
         .folders {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ep-info {
+            background-color: #252525;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 3px solid #444;
+            /* Zabezpieczenie przed wychodzeniem bardzo długich nazw plików poza ekran */
+            word-break: break-all; 
         }
         
         .folder-tag {
-            background-color: #2c2c2c;
-            color: #cfcfcf;
-            padding: 5px 12px;
-            border-radius: 15px;
+            color: var(--accent);
             font-size: 0.85rem;
-            border: 1px solid #444;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 6px;
         }
 
-        /* Drobna poprawka dla bardzo małych ekranów (np. węższe telefony) */
+        .ep-name {
+            color: #cfcfcf;
+            font-size: 0.95rem;
+            display: block;
+            margin-left: 10px;
+            margin-bottom: 4px;
+        }
+
+        .ep-name::before {
+            content: "▶ ";
+            color: var(--accent);
+            font-size: 0.8rem;
+        }
+
         @media (max-width: 500px) {
             .back-btn {
                 padding: 8px 15px;
@@ -140,12 +184,16 @@
                 margin-top: 50px;
                 font-size: 1.5rem;
             }
+            .time-block {
+                min-width: 60px;
+                font-size: 1.2rem;
+                padding: 15px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Przycisk powrotu wyciągnięty z kontenera, żeby łatwiej pozycjonować go na całym ekranie -->
     <a href="index.html" class="back-btn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -156,11 +204,614 @@
 
 <div class="schedule-container">
     <h1>📺 ramówka transmisji</h1>
+    
+    <div class="controls">
+        <label for="schedule-date">Wybierz dzień emisji:</label>
+        <input type="date" id="schedule-date" min="2026-05-01">
+    </div>
+
     <div id="schedule-list"></div>
 </div>
 
 <script>
-    // Twoje dane JSON
+    // --- BAZA ODCINKÓW WYGENEROWANA Z anime_lista.csv ---
+    const episodesDB = {
+        "Extras": [
+            "[DB]High School DxD_-_NCED_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_NCOP_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_OVA01_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_OVA02_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_Special01_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_Special02_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_Special03_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_Special04_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_Special05_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_Special06_(10bit_BD1080p_x265)_small"
+        ],
+        "Gekkan Shoujo Nozaki-kun": [
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 01 (BD 720p AAC) [ED114C93]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 02 (BD 720p AAC) [84BC9C81]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 03 (BD 720p AAC) [95BE22DF]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 04 (BD 720p AAC) [E760DF61]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 05 (BD 720p AAC) [E50CA33C]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 06 (BD 720p AAC) [4DB452F5]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 07 (BD 720p AAC) [BF25FFDE]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 08 (BD 720p AAC) [0CD19266]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 09 (BD 720p AAC) [C2902640]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 10 (BD 720p AAC) [03ACAD25]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 11 (BD 720p AAC) [1C790D7C]_small",
+            "[Oyasumi] Gekkan Shoujo Nozaki-kun - 12 (BD 720p AAC) [FE3A9DF1]_small"
+        ],
+        "High School DxD": [
+            "[DB]High School DxD_-_01_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_02_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_03_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_04_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_05_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_06_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_07_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_08_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_09_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_10_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_11_(10bit_BD1080p_x265)_small",
+            "[DB]High School DxD_-_12_(10bit_BD1080p_x265)_small"
+        ],
+        "High school of the dead": [
+            "[DB] High School of the Dead - 01 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 02 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 03 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 04 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 05 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 06 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 07 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 08 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 09 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 10 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 11 (10bit BD1080p x265)_small",
+            "[DB] High School of the Dead - 12 (10bit BD1080p x265)_small"
+        ],
+        "Ijiranaide, Nagatoro-san": [
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 01 (1080p) [2719B5E4]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [E50E77FB]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 03 (1080p) [DE68E180]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 04 (1080p) [0BF3403F]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 05 (1080p) [2A65F559]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 06 (1080p) [00F2F9C2]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 07 (1080p) [AE2EEA8F]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 08 (1080p) [C08BB631]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 09 (1080p) [DE33346F]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 10 (1080p) [DA86B492]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 11 (1080p) [1C74DE3A]_small",
+            "[SubsPlease] Ijiranaide, Nagatoro-san - 12 (1080p) [3EE91EED]_small"
+        ],
+        "Seihou Bukyou Outlaw Star": [
+            "Outlaw Star 01 Outlaw World [70DA30B2]",
+            "Outlaw Star 02 World of Desires [2FE89BBD]",
+            "Outlaw Star 03 Into Burning Space [AC154AA5]",
+            "Outlaw Star 04 When the Hot Ice Melts [236D48DB]",
+            "Outlaw Star 05 The Beast Girl Ready to Pounce! [742DBFC0]",
+            "Outlaw Star 06 The Beautiful Assassin [11F2EED6]",
+            "Outlaw Star 07 Creeping Evil [33FCF9DC]",
+            "Outlaw Star 08 Forced Departure [2E788326]",
+            "Outlaw Star 09 A Journey of Adventure...Huh [F26E6F90]",
+            "Outlaw Star 10 Gathering for the Space Race [B9E0EE47]",
+            "Outlaw Star 11 Adrift in Subspace [365113B9]",
+            "Outlaw Star 12 Mortal Combat with the El Dorado [48A1B6A4]",
+            "Outlaw Star 13 Advance Guard from Another World [61DF3B4D]",
+            "Outlaw Star 14 Final Countdown [C54BC5DF]",
+            "Outlaw Star 15 The Seven Pon Pirate [FDFEF3B8]",
+            "Outlaw Star 16 Demon of the Water Planet [123CFE5A]",
+            "Outlaw Star 17 Between Life and Machine [A089EEF2]",
+            "Outlaw Star 18 The Strongest Woman in the Universe [32F61314]",
+            "Outlaw Star 19 Law and Lawlessness [BDE49132]",
+            "Outlaw Star 20 Cats and Girls and Spaceships [E2DF7D4C]",
+            "Outlaw Star 21 Grave of the Dragon [04D0BBF0]",
+            "Outlaw Star 22 Gravity Jailbreak [FC5A7BC1]",
+            "Outlaw Star 23 Hot Springs Planet Tenrei [05E994E8]",
+            "Outlaw Star 24 Cutting the Galactic Leyline [5923985D]",
+            "Outlaw Star 25 Maze of Despair [EFEBF341]",
+            "Outlaw Star 26 Return to Space [362B40DE]"
+        ],
+        "Shikanoko Nokonoko Koshitantan": [
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 01 (1080p) [A308B520]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 02 (1080p) [2CAE9164]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 03 (1080p) [DC5F1690]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 04 (1080p) [B2FE3C99]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 05 (1080p) [EAD95E2B]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 06 (1080p) [56E9DFE4]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 07 (1080p) [D23DDA1D]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 08 (1080p) [CA86CC9F]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 09 (1080p) [98A53B3C]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 10 (1080p) [C089B2B6]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 11 (1080p) [BCBE5C01]_small",
+            "[SubsPlease] Shikanoko Nokonoko Koshitantan - 12 (1080p) [B521E2BD]_small"
+        ],
+        "Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu": [
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 01 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 02 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 03 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 04 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 05 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 06 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 07 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 08 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 09 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 10 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 11 [720p][Multiple Subtitle]_small",
+            "[Erai-raws] Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e - 12 [720p][Multiple Subtitle]_small"
+        ],
+        "Zombieland Saga S01 1080p Dual Audio BDRip 10 bits DD x265-EMBER": [
+            "[EMBER] Zombieland Saga - 01.mkv",
+            "[EMBER] Zombieland Saga - 02.mkv",
+            "[EMBER] Zombieland Saga - 03.mkv",
+            "[EMBER] Zombieland Saga - 04.mkv",
+            "[EMBER] Zombieland Saga - 05.mkv",
+            "[EMBER] Zombieland Saga - 06.mkv",
+            "[EMBER] Zombieland Saga - 07.mkv",
+            "[EMBER] Zombieland Saga - 08.mkv",
+            "[EMBER] Zombieland Saga - 09.mkv",
+            "[EMBER] Zombieland Saga - 10.mkv",
+            "[EMBER] Zombieland Saga - 11.mkv",
+            "[EMBER] Zombieland Saga - 12.mkv"
+        ],
+        "Zombieland Saga S02 1080p Dual Audio BDRip 10 bits DD x265-EMBER": [
+            "[EMBER] Zombieland Saga Revenge - 01.mkv",
+            "[EMBER] Zombieland Saga Revenge - 02.mkv",
+            "[EMBER] Zombieland Saga Revenge - 03.mkv",
+            "[EMBER] Zombieland Saga Revenge - 04.mkv",
+            "[EMBER] Zombieland Saga Revenge - 05.mkv",
+            "[EMBER] Zombieland Saga Revenge - 06.mkv",
+            "[EMBER] Zombieland Saga Revenge - 07.mkv",
+            "[EMBER] Zombieland Saga Revenge - 08.mkv",
+            "[EMBER] Zombieland Saga Revenge - 09.mkv",
+            "[EMBER] Zombieland Saga Revenge - 10.mkv",
+            "[EMBER] Zombieland Saga Revenge - 11.mkv",
+            "[EMBER] Zombieland Saga Revenge - 12.mkv"
+        ],
+        "[Dodgy] Shrine of the Morning Mist [Web 720p]": [
+            "[Dodgy] Shrine of the Morning Mist - 01 [Web 720p] [45F456AC]",
+            "[Dodgy] Shrine of the Morning Mist - 02 [Web 720p] [AF9FCED2]",
+            "[Dodgy] Shrine of the Morning Mist - 03 [Web 720p] [D8BD4B01]",
+            "[Dodgy] Shrine of the Morning Mist - 04 [Web 720p] [DF7C4290]",
+            "[Dodgy] Shrine of the Morning Mist - 05 [Web 720p] [A2E07AF1]",
+            "[Dodgy] Shrine of the Morning Mist - 06 [Web 720p] [2AEE30F4]",
+            "[Dodgy] Shrine of the Morning Mist - 07 [Web 720p] [DA3FE542]",
+            "[Dodgy] Shrine of the Morning Mist - 08 [Web 720p] [FAD34994]",
+            "[Dodgy] Shrine of the Morning Mist - 09 [Web 720p] [17FE9BF5]",
+            "[Dodgy] Shrine of the Morning Mist - 10 [Web 720p] [1D9B51E3]",
+            "[Dodgy] Shrine of the Morning Mist - 11 [Web 720p] [EDC00A17]",
+            "[Dodgy] Shrine of the Morning Mist - 12 [Web 720p] [32CE8203]",
+            "[Dodgy] Shrine of the Morning Mist - 13 [Web 720p] [464D9082]",
+            "[Dodgy] Shrine of the Morning Mist - 14 [Web 720p] [07B2D2BA]",
+            "[Dodgy] Shrine of the Morning Mist - 15 [Web 720p] [A2D6E49E]",
+            "[Dodgy] Shrine of the Morning Mist - 16 [Web 720p] [49D79F14]",
+            "[Dodgy] Shrine of the Morning Mist - 17 [Web 720p] [48DFDFE7]",
+            "[Dodgy] Shrine of the Morning Mist - 18 [Web 720p] [2D0E69CD]",
+            "[Dodgy] Shrine of the Morning Mist - 19 [Web 720p] [93233B27]",
+            "[Dodgy] Shrine of the Morning Mist - 20 [Web 720p] [0234C0B6]",
+            "[Dodgy] Shrine of the Morning Mist - 21 [Web 720p] [19E52E63]",
+            "[Dodgy] Shrine of the Morning Mist - 22 [Web 720p] [AF90F849]",
+            "[Dodgy] Shrine of the Morning Mist - 23 [Web 720p] [DBB0AE5B]",
+            "[Dodgy] Shrine of the Morning Mist - 24 [Web 720p] [AE9C5C1A]",
+            "[Dodgy] Shrine of the Morning Mist - 25 [Web 720p] [0D2DE079]",
+            "[Dodgy] Shrine of the Morning Mist - 26 [Web 720p] [DAE8F67C]"
+        ],
+        "[Dodgy] Star Ocean EX [BD 480p]": [
+            "[Dodgy] Star Ocean EX - 01 [BD 480p] [A4C50F33]",
+            "[Dodgy] Star Ocean EX - 02 [BD 480p] [0EECCDE7]",
+            "[Dodgy] Star Ocean EX - 03 [BD 480p] [443599E6]",
+            "[Dodgy] Star Ocean EX - 04 [BD 480p] [A479F637]",
+            "[Dodgy] Star Ocean EX - 05 [BD 480p] [3404CE56]",
+            "[Dodgy] Star Ocean EX - 06 [BD 480p] [2BC73EF5]",
+            "[Dodgy] Star Ocean EX - 07 [BD 480p] [B7D0DEBC]",
+            "[Dodgy] Star Ocean EX - 08 [BD 480p] [A6BB2C58]",
+            "[Dodgy] Star Ocean EX - 09 [BD 480p] [3DCE2BBE]",
+            "[Dodgy] Star Ocean EX - 10 [BD 480p] [BBF94B73]",
+            "[Dodgy] Star Ocean EX - 11 [BD 480p] [153381B3]",
+            "[Dodgy] Star Ocean EX - 12 [BD 480p] [7BE3E6D0]",
+            "[Dodgy] Star Ocean EX - 13 [BD 480p] [AD10DEB0]",
+            "[Dodgy] Star Ocean EX - 14 [BD 480p] [1198DE38]",
+            "[Dodgy] Star Ocean EX - 15 [BD 480p] [A1BCC24B]",
+            "[Dodgy] Star Ocean EX - 16 [BD 480p] [FC5B5F37]",
+            "[Dodgy] Star Ocean EX - 17 [BD 480p] [3FC88029]",
+            "[Dodgy] Star Ocean EX - 18 [BD 480p] [AF9FCDEB]",
+            "[Dodgy] Star Ocean EX - 19 [BD 480p] [4072CA1C]",
+            "[Dodgy] Star Ocean EX - 20 [BD 480p] [61BF5FDF]",
+            "[Dodgy] Star Ocean EX - 21 [BD 480p] [9448C0FB]",
+            "[Dodgy] Star Ocean EX - 22 [BD 480p] [2C2263F7]",
+            "[Dodgy] Star Ocean EX - 23 [BD 480p] [896C72E3]",
+            "[Dodgy] Star Ocean EX - 24 [BD 480p] [35F6FF1C]",
+            "[Dodgy] Star Ocean EX - 25 [BD 480p] [073C74C4]",
+            "[Dodgy] Star Ocean EX - 26 [BD 480p] [57E77DF8]"
+        ],
+        "[F-R] One Piece 0001-0782 (Batch)": [
+            "[F-R] One Piece 0001 [28CAE4E0]",
+            "[F-R] One Piece 0002 [DAA97BCA]",
+            "[F-R] One Piece 0003 [359288AB]",
+            "[F-R] One Piece 0004 [CAE8817D]",
+            "[F-R] One Piece 0005 [6CE1CE11]",
+            "[F-R] One Piece 0006 [AE10E655]",
+            "[F-R] One Piece 0007 [9FF06E2E]",
+            "[F-R] One Piece 0008 [8955DE2E]",
+            "[F-R] One Piece 0009 [BA2A2BEA]",
+            "[F-R] One Piece 0010 [429EEB81]",
+            "[F-R] One Piece 0011 [E9B44BDE]",
+            "[F-R] One Piece 0012 [0951C0F4]",
+            "[F-R] One Piece 0013 [90E768BA]",
+            "[F-R] One Piece 0014 [0883CFD7]",
+            "[F-R] One Piece 0015 [7AE41AD2]",
+            "[F-R] One Piece 0016 [CEB3AEF3]",
+            "[F-R] One Piece 0017 [53F4E02E]",
+            "[F-R] One Piece 0018 [2B3DFB49]",
+            "[F-R] One Piece 0019 [EE09CA93]",
+            "[F-R] One Piece 0020 [1D18CD89]",
+            "[F-R] One Piece 0021 [7E97DF9C]",
+            "[F-R] One Piece 0022 [C471E200]",
+            "[F-R] One Piece 0023 [DCBE11B7]",
+            "[F-R] One Piece 0024 [4EF97DC9]",
+            "[F-R] One Piece 0025 [AF5A4A76]",
+            "[F-R] One Piece 0026 [29CEF6D6]",
+            "[F-R] One Piece 0027 [B1D6F03F]",
+            "[F-R] One Piece 0028 [F2987118]",
+            "[F-R] One Piece 0029 [4426EEA7]",
+            "[F-R] One Piece 0030 [AD3F8775]",
+            "[F-R] One Piece 0031 [2F36A7A6]",
+            "[F-R] One Piece 0032 [8CC2F7D6]",
+            "[F-R] One Piece 0033 [6C89BB9E]",
+            "[F-R] One Piece 0034 [AD75A511]",
+            "[F-R] One Piece 0035 [07BDEEA2]",
+            "[F-R] One Piece 0036 [61C2C9BA]",
+            "[F-R] One Piece 0037 [1A67CFE9]",
+            "[F-R] One Piece 0038 [A050308C]",
+            "[F-R] One Piece 0039 [95CF0A48]",
+            "[F-R] One Piece 0040 [FB112B16]",
+            "[F-R] One Piece 0041 [0CEAF225]",
+            "[F-R] One Piece 0042 [7BCB420C]",
+            "[F-R] One Piece 0043 [0BB6F357]",
+            "[F-R] One Piece 0044 [4BD179F9]",
+            "[F-R] One Piece 0045 [E501BC4C]",
+            "[F-R] One Piece 0046 [7DEEB84E]",
+            "[F-R] One Piece 0047 [423BE279]",
+            "[F-R] One Piece 0048 [E007BA30]",
+            "[F-R] One Piece 0049 [C9F28E5C]",
+            "[F-R] One Piece 0050 [EDFDF875]",
+            "[F-R] One Piece 0051 [4B114FE3]",
+            "[F-R] One Piece 0052 [D8134FAD]",
+            "[F-R] One Piece 0053 [B9E7DF98]",
+            "[F-R] One Piece 0054 [541B59C2]",
+            "[F-R] One Piece 0055 [3CC30E09]",
+            "[F-R] One Piece 0056 [BC29B0D8]",
+            "[F-R] One Piece 0057 [6F226E6F]",
+            "[F-R] One Piece 0058 [A8BAEE1B]",
+            "[F-R] One Piece 0059 [0EDFE506]",
+            "[F-R] One Piece 0060 [19564DF9]",
+            "[F-R] One Piece 0061 [E97486B2]",
+            "[F-R] One Piece 0062 [A412FDE9]",
+            "[F-R] One Piece 0063 [28C48753]",
+            "[F-R] One Piece 0064 [FC26EED7]",
+            "[F-R] One Piece 0065 [B636D090]",
+            "[F-R] One Piece 0066 [8B70BB72]",
+            "[F-R] One Piece 0067 [B0AE52CE]",
+            "[F-R] One Piece 0068 [72AA7BA5]",
+            "[F-R] One Piece 0069 [D19B2BCF]",
+            "[F-R] One Piece 0070 [F2188E07]",
+            "[F-R] One Piece 0071 [DCF87B75]",
+            "[F-R] One Piece 0072 [2AE038FB]",
+            "[F-R] One Piece 0073 [9137B3BC]",
+            "[F-R] One Piece 0074 [98230FC8]",
+            "[F-R] One Piece 0075 [9BA901EE]",
+            "[F-R] One Piece 0076 [F15DF2B5]",
+            "[F-R] One Piece 0077 [773D5CAE]",
+            "[F-R] One Piece 0078 [2533F11E]",
+            "[F-R] One Piece 0079 [65CE9C27]",
+            "[F-R] One Piece 0080 [BEE2CD6B]",
+            "[F-R] One Piece 0081 [D068C484]",
+            "[F-R] One Piece 0082 [1E17FCBC]",
+            "[F-R] One Piece 0083 [E023E629]",
+            "[F-R] One Piece 0084 [2DC82D98]",
+            "[F-R] One Piece 0085 [DB7093B4]",
+            "[F-R] One Piece 0086 [56488734]",
+            "[F-R] One Piece 0087 [923CE698]",
+            "[F-R] One Piece 0088 [6A752002]",
+            "[F-R] One Piece 0089 [EE8461E2]",
+            "[F-R] One Piece 0090 [CC2F497D]",
+            "[F-R] One Piece 0091 [24A325AC]",
+            "[F-R] One Piece 0092 [DDE34B76]",
+            "[F-R] One Piece 0093 [9F93FBC0]",
+            "[F-R] One Piece 0094 [B90576C7]",
+            "[F-R] One Piece 0095 [7E86CF88]",
+            "[F-R] One Piece 0096 [29F11EBD]",
+            "[F-R] One Piece 0097 [0B02EF3E]",
+            "[F-R] One Piece 0098 [145A610A]",
+            "[F-R] One Piece 0099 [AEBE9CD6]",
+            "[F-R] One Piece 0100 [CD9D8967]",
+            "[F-R] One Piece 0101 [34DDFDB1]",
+            "[F-R] One Piece 0102 [94C12BE8]",
+            "[F-R] One Piece 0103 [382DA6CD]",
+            "[F-R] One Piece 0104 [D5DFCC88]",
+            "[F-R] One Piece 0105 [418F710A]",
+            "[F-R] One Piece 0106 [70ED75B5]",
+            "[F-R] One Piece 0107 [209F219F]",
+            "[F-R] One Piece 0108 [B4A7A574]",
+            "[F-R] One Piece 0109 [212BCB0B]",
+            "[F-R] One Piece 0110 [B853FE63]",
+            "[F-R] One Piece 0111 [F153CF77]",
+            "[F-R] One Piece 0112 [F2CFB00B]",
+            "[F-R] One Piece 0113 [3EAD726C]",
+            "[F-R] One Piece 0114 [BB23EAFB]",
+            "[F-R] One Piece 0115 [14E18104]",
+            "[F-R] One Piece 0116 [78B9DC3A]",
+            "[F-R] One Piece 0117 [94F6C121]",
+            "[F-R] One Piece 0118 [A6B72DFE]",
+            "[F-R] One Piece 0119 [955B6E32]",
+            "[F-R] One Piece 0120 [C98BD2E9]",
+            "[F-R] One Piece 0121 [CFE3D127]",
+            "[F-R] One Piece 0122 [7F84FDB0]",
+            "[F-R] One Piece 0123 [CA01662B]",
+            "[F-R] One Piece 0124 [A3CFEDF1]",
+            "[F-R] One Piece 0125 [717770E8]",
+            "[F-R] One Piece 0126 [AFFA60D7]",
+            "[F-R] One Piece 0127 [0BEB3979]",
+            "[F-R] One Piece 0128 [F20E15AE]",
+            "[F-R] One Piece 0129 [F493BA1E]",
+            "[F-R] One Piece 0130 [E5C5DCAC]"
+        ],
+        "[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)": [
+            "[HorribleSubs] Lupin III Part I - 01 [480p]",
+            "[HorribleSubs] Lupin III Part I - 02 [480p]",
+            "[HorribleSubs] Lupin III Part I - 03 [480p]",
+            "[HorribleSubs] Lupin III Part I - 04 [480p]",
+            "[HorribleSubs] Lupin III Part I - 05 [480p]",
+            "[HorribleSubs] Lupin III Part I - 06 [480p]",
+            "[HorribleSubs] Lupin III Part I - 07 [480p]",
+            "[HorribleSubs] Lupin III Part I - 08 [480p]",
+            "[HorribleSubs] Lupin III Part I - 09 [480p]",
+            "[HorribleSubs] Lupin III Part I - 10 [480p]",
+            "[HorribleSubs] Lupin III Part I - 11 [480p]",
+            "[HorribleSubs] Lupin III Part I - 12 [480p]",
+            "[HorribleSubs] Lupin III Part I - 13 [480p]",
+            "[HorribleSubs] Lupin III Part I - 14 [480p]",
+            "[HorribleSubs] Lupin III Part I - 15 [480p]",
+            "[HorribleSubs] Lupin III Part I - 16 [480p]",
+            "[HorribleSubs] Lupin III Part I - 17 [480p]",
+            "[HorribleSubs] Lupin III Part I - 18 [480p]",
+            "[HorribleSubs] Lupin III Part I - 19 [480p]",
+            "[HorribleSubs] Lupin III Part I - 20 [480p]",
+            "[HorribleSubs] Lupin III Part I - 21 [480p]",
+            "[HorribleSubs] Lupin III Part I - 22 [480p]",
+            "[HorribleSubs] Lupin III Part I - 23 [480p]"
+        ],
+        "[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)": [
+            "[HorribleSubs] Lupin III Part II - 001 [480p]",
+            "[HorribleSubs] Lupin III Part II - 002 [480p]",
+            "[HorribleSubs] Lupin III Part II - 003 [480p]",
+            "[HorribleSubs] Lupin III Part II - 004 [480p]",
+            "[HorribleSubs] Lupin III Part II - 005 [480p]",
+            "[HorribleSubs] Lupin III Part II - 006 [480p]",
+            "[HorribleSubs] Lupin III Part II - 007 [480p]",
+            "[HorribleSubs] Lupin III Part II - 008 [480p]",
+            "[HorribleSubs] Lupin III Part II - 009 [480p]",
+            "[HorribleSubs] Lupin III Part II - 010 [480p]",
+            "[HorribleSubs] Lupin III Part II - 011 [480p]",
+            "[HorribleSubs] Lupin III Part II - 012 [480p]",
+            "[HorribleSubs] Lupin III Part II - 013 [480p]",
+            "[HorribleSubs] Lupin III Part II - 014 [480p]",
+            "[HorribleSubs] Lupin III Part II - 015 [480p]",
+            "[HorribleSubs] Lupin III Part II - 016 [480p]",
+            "[HorribleSubs] Lupin III Part II - 017 [480p]",
+            "[HorribleSubs] Lupin III Part II - 018 [480p]",
+            "[HorribleSubs] Lupin III Part II - 019 [480p]",
+            "[HorribleSubs] Lupin III Part II - 020 [480p]",
+            "[HorribleSubs] Lupin III Part II - 021 [480p]",
+            "[HorribleSubs] Lupin III Part II - 022 [480p]",
+            "[HorribleSubs] Lupin III Part II - 023 [480p]",
+            "[HorribleSubs] Lupin III Part II - 024 [480p]",
+            "[HorribleSubs] Lupin III Part II - 025 [480p]",
+            "[HorribleSubs] Lupin III Part II - 026 [480p]",
+            "[HorribleSubs] Lupin III Part II - 027 [480p]",
+            "[HorribleSubs] Lupin III Part II - 028 [480p]",
+            "[HorribleSubs] Lupin III Part II - 029 [480p]",
+            "[HorribleSubs] Lupin III Part II - 030 [480p]",
+            "[HorribleSubs] Lupin III Part II - 031 [480p]",
+            "[HorribleSubs] Lupin III Part II - 032 [480p]",
+            "[HorribleSubs] Lupin III Part II - 033 [480p]",
+            "[HorribleSubs] Lupin III Part II - 034 [480p]",
+            "[HorribleSubs] Lupin III Part II - 035 [480p]",
+            "[HorribleSubs] Lupin III Part II - 036 [480p]",
+            "[HorribleSubs] Lupin III Part II - 037 [480p]",
+            "[HorribleSubs] Lupin III Part II - 038 [480p]",
+            "[HorribleSubs] Lupin III Part II - 039 [480p]",
+            "[HorribleSubs] Lupin III Part II - 040 [480p]",
+            "[HorribleSubs] Lupin III Part II - 041 [480p]",
+            "[HorribleSubs] Lupin III Part II - 042 [480p]",
+            "[HorribleSubs] Lupin III Part II - 043 [480p]",
+            "[HorribleSubs] Lupin III Part II - 044 [480p]",
+            "[HorribleSubs] Lupin III Part II - 045 [480p]",
+            "[HorribleSubs] Lupin III Part II - 046 [480p]",
+            "[HorribleSubs] Lupin III Part II - 047 [480p]",
+            "[HorribleSubs] Lupin III Part II - 048 [480p]",
+            "[HorribleSubs] Lupin III Part II - 049 [480p]",
+            "[HorribleSubs] Lupin III Part II - 050 [480p]",
+            "[HorribleSubs] Lupin III Part II - 051 [480p]",
+            "[HorribleSubs] Lupin III Part II - 052 [480p]",
+            "[HorribleSubs] Lupin III Part II - 053 [480p]",
+            "[HorribleSubs] Lupin III Part II - 054 [480p]",
+            "[HorribleSubs] Lupin III Part II - 055 [480p]",
+            "[HorribleSubs] Lupin III Part II - 056 [480p]",
+            "[HorribleSubs] Lupin III Part II - 057 [480p]",
+            "[HorribleSubs] Lupin III Part II - 058 [480p]",
+            "[HorribleSubs] Lupin III Part II - 059 [480p]",
+            "[HorribleSubs] Lupin III Part II - 060 [480p]",
+            "[HorribleSubs] Lupin III Part II - 061 [480p]",
+            "[HorribleSubs] Lupin III Part II - 062 [480p]",
+            "[HorribleSubs] Lupin III Part II - 063 [480p]",
+            "[HorribleSubs] Lupin III Part II - 064 [480p]",
+            "[HorribleSubs] Lupin III Part II - 065 [480p]",
+            "[HorribleSubs] Lupin III Part II - 066 [480p]",
+            "[HorribleSubs] Lupin III Part II - 067 [480p]",
+            "[HorribleSubs] Lupin III Part II - 068 [480p]",
+            "[HorribleSubs] Lupin III Part II - 069 [480p]",
+            "[HorribleSubs] Lupin III Part II - 070 [480p]",
+            "[HorribleSubs] Lupin III Part II - 071 [480p]"
+        ],
+        "[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)": [
+            "[HorribleSubs] Lupin III Part III - 01 [480p]",
+            "[HorribleSubs] Lupin III Part III - 02 [480p]",
+            "[HorribleSubs] Lupin III Part III - 03 [480p]",
+            "[HorribleSubs] Lupin III Part III - 04 [480p]",
+            "[HorribleSubs] Lupin III Part III - 05 [480p]",
+            "[HorribleSubs] Lupin III Part III - 06 [480p]",
+            "[HorribleSubs] Lupin III Part III - 07 [480p]",
+            "[HorribleSubs] Lupin III Part III - 08 [480p]",
+            "[HorribleSubs] Lupin III Part III - 09 [480p]",
+            "[HorribleSubs] Lupin III Part III - 10 [480p]",
+            "[HorribleSubs] Lupin III Part III - 11 [480p]",
+            "[HorribleSubs] Lupin III Part III - 12 [480p]",
+            "[HorribleSubs] Lupin III Part III - 13 [480p]",
+            "[HorribleSubs] Lupin III Part III - 14 [480p]",
+            "[HorribleSubs] Lupin III Part III - 15 [480p]",
+            "[HorribleSubs] Lupin III Part III - 16 [480p]",
+            "[HorribleSubs] Lupin III Part III - 17 [480p]",
+            "[HorribleSubs] Lupin III Part III - 18 [480p]",
+            "[HorribleSubs] Lupin III Part III - 19 [480p]",
+            "[HorribleSubs] Lupin III Part III - 20 [480p]",
+            "[HorribleSubs] Lupin III Part III - 21 [480p]",
+            "[HorribleSubs] Lupin III Part III - 22 [480p]",
+            "[HorribleSubs] Lupin III Part III - 23 [480p]",
+            "[HorribleSubs] Lupin III Part III - 24 [480p]",
+            "[HorribleSubs] Lupin III Part III - 25 [480p]",
+            "[HorribleSubs] Lupin III Part III - 26 [480p]",
+            "[HorribleSubs] Lupin III Part III - 27 [480p]",
+            "[HorribleSubs] Lupin III Part III - 28 [480p]",
+            "[HorribleSubs] Lupin III Part III - 29 [480p]",
+            "[HorribleSubs] Lupin III Part III - 30 [480p]",
+            "[HorribleSubs] Lupin III Part III - 31 [480p]",
+            "[HorribleSubs] Lupin III Part III - 32 [480p]",
+            "[HorribleSubs] Lupin III Part III - 33 [480p]",
+            "[HorribleSubs] Lupin III Part III - 34 [480p]",
+            "[HorribleSubs] Lupin III Part III - 35 [480p]",
+            "[HorribleSubs] Lupin III Part III - 36 [480p]",
+            "[HorribleSubs] Lupin III Part III - 37 [480p]",
+            "[HorribleSubs] Lupin III Part III - 38 [480p]",
+            "[HorribleSubs] Lupin III Part III - 39 [480p]",
+            "[HorribleSubs] Lupin III Part III - 40 [480p]",
+            "[HorribleSubs] Lupin III Part III - 41 [480p]",
+            "[HorribleSubs] Lupin III Part III - 42 [480p]",
+            "[HorribleSubs] Lupin III Part III - 43 [480p]",
+            "[HorribleSubs] Lupin III Part III - 44 [480p]",
+            "[HorribleSubs] Lupin III Part III - 45 [480p]",
+            "[HorribleSubs] Lupin III Part III - 46 [480p]",
+            "[HorribleSubs] Lupin III Part III - 47 [480p]",
+            "[HorribleSubs] Lupin III Part III - 48 [480p]",
+            "[HorribleSubs] Lupin III Part III - 49 [480p]",
+            "[HorribleSubs] Lupin III Part III - 50 [480p]"
+        ],
+        "aot s1 25 odcinków_small": [
+            "e01 [224918752b]_small",
+            "e02 [22491935c7]_small",
+            "e03 [2249303391]_small",
+            "e04 [2249338782]_small",
+            "e05 [22493309b8]_small",
+            "e06 [2249335161]_small",
+            "e07 [224919770c]_small",
+            "e08 [224932494e]_small",
+            "e09 [22493039e8]_small",
+            "e10 [2249299778]_small",
+            "e11 [22493060cf]_small",
+            "e12 [22493407bb]_small",
+            "e13 [22492829ec]_small",
+            "e14 [22493196c1]_small",
+            "e15 [224932906b]_small",
+            "e16 [224933503c]_small",
+            "e17 [2249334460]_small",
+            "e18 [22491965ce]_small",
+            "e19 [22493181cf]_small",
+            "e20 [2249317070]_small",
+            "e21 [22493393b6]_small",
+            "e22 [2249323136]_small",
+            "e23 [22493233b8]_small",
+            "e24 [224918451f]_small",
+            "e25 [2249272836]_small"
+        ],
+        "azumanga": [
+            "[Judas] Azumanga Daioh - S01E01.mkv",
+            "[Judas] Azumanga Daioh - S01E02.mkv",
+            "[Judas] Azumanga Daioh - S01E03.mkv",
+            "[Judas] Azumanga Daioh - S01E04.mkv",
+            "[Judas] Azumanga Daioh - S01E05.mkv",
+            "[Judas] Azumanga Daioh - S01E06.mkv",
+            "[Judas] Azumanga Daioh - S01E07.mkv",
+            "[Judas] Azumanga Daioh - S01E08.mkv",
+            "[Judas] Azumanga Daioh - S01E09.mkv",
+            "[Judas] Azumanga Daioh - S01E10.mkv",
+            "[Judas] Azumanga Daioh - S01E11.mkv",
+            "[Judas] Azumanga Daioh - S01E12.mkv",
+            "[Judas] Azumanga Daioh - S01E13.mkv",
+            "[Judas] Azumanga Daioh - S01E14.mkv",
+            "[Judas] Azumanga Daioh - S01E15.mkv",
+            "[Judas] Azumanga Daioh - S01E16.mkv",
+            "[Judas] Azumanga Daioh - S01E17.mkv",
+            "[Judas] Azumanga Daioh - S01E18.mkv",
+            "[Judas] Azumanga Daioh - S01E19.mkv",
+            "[Judas] Azumanga Daioh - S01E20.mkv",
+            "[Judas] Azumanga Daioh - S01E21.mkv",
+            "[Judas] Azumanga Daioh - S01E22.mkv",
+            "[Judas] Azumanga Daioh - S01E23.mkv",
+            "[Judas] Azumanga Daioh - S01E24.mkv",
+            "[Judas] Azumanga Daioh - S01E25.mkv",
+            "[Judas] Azumanga Daioh - S01E26.mkv"
+        ],
+        "flying witch": [
+            "[EMBER] Flying Witch - 01.mkv",
+            "[EMBER] Flying Witch - 02.mkv",
+            "[EMBER] Flying Witch - 03.mkv",
+            "[EMBER] Flying Witch - 04.mkv",
+            "[EMBER] Flying Witch - 05.mkv",
+            "[EMBER] Flying Witch - 06.mkv",
+            "[EMBER] Flying Witch - 07.mkv",
+            "[EMBER] Flying Witch - 08.mkv",
+            "[EMBER] Flying Witch - 09.mkv",
+            "[EMBER] Flying Witch - 10.mkv",
+            "[EMBER] Flying Witch - 11.mkv",
+            "[EMBER] Flying Witch - 12.mkv"
+        ],
+        "initial D": [
+            "ID_S01E01",
+            "ID_S01E02",
+            "ID_S01E03",
+            "ID_S01E04",
+            "ID_S01E05",
+            "ID_S01E06",
+            "ID_S01E07",
+            "ID_S01E08",
+            "ID_S01E09",
+            "ID_S01E10",
+            "ID_S01E11",
+            "ID_S01E12",
+            "ID_S01E13",
+            "ID_S01E14",
+            "ID_S01E15",
+            "ID_S01E16",
+            "ID_S01E17",
+            "ID_S01E18",
+            "ID_S01E19",
+            "ID_S01E20"
+        ],
+        "re zero": [
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 01 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 02 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 03 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 04 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 05 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 06 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 07 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 08 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 09 [720p]",
+            "[HorribleSubs] Re Zero kara Hajimeru Isekai Seikatsu - 10 [720p]"
+        ]
+    };
+
+    // --- RAMÓWKA ---
     const scheduleData = [
       { "hour": 0, "folders": ["High School DxD", "High school of the dead"], "title": "Nocne Maratony (Codziennie)" },
       { "hour": 1, "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"], "title": "Nocne Tajemnice (Codziennie)" },
@@ -194,47 +845,147 @@
       { "hour": 23, "folders": ["azumanga", "Shikanoko Nokonoko Koshitantan"], "title": "Późna Noc Komediowa (Codziennie)" }
     ];
 
+    // ... tutaj wyżej kończy się Twoje scheduleData ...
+
     const scheduleList = document.getElementById('schedule-list');
+    const dateInput = document.getElementById('schedule-date');
+    
+    // Ustawienie domyślnej daty na 'dzisiaj' w bezpiecznym formacie (YYYY-MM-DD)
+    const today = new Date();
+    const localIsoDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    dateInput.value = localIsoDate;
 
     function formatTime(hour) {
         return `${hour.toString().padStart(2, '0')}:00`;
     }
 
-    function getDaysLabel(days) {
-        if (!days) return "codziennie";
+    function renderSchedule(targetDateString) {
+        scheduleList.innerHTML = '';
         
-        const isWeekdays = days.join(',') === '1,2,3,4,5';
-        const isWeekend = days.join(',') === '6,7';
+        // Bezpieczne parsowanie daty z kalendarza, odporne na przesunięcia czasowe
+        const [year, month, day] = targetDateString.split('-');
+        const targetDate = new Date(year, month - 1, day);
+        targetDate.setHours(0,0,0,0);
         
-        if (isWeekdays) return "poniedziałek - piątek";
-        if (isWeekend) return "sobota - niedziela";
+        // --- LOGIKA SKOPIOWANA BEZPOŚREDNIO Z index.html ---
+        // Obliczanie cyklu i wewnętrznego DOW na podstawie czasu Epoch
+        const localEpochMs = targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000);
+        const cycleDay = (Math.floor(localEpochMs / 86400000) % 182) + 1;
+        const currentDOW = ((cycleDay - 1) % 7) + 1; 
         
-        const dayNames = ["", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"];
-        return days.map(d => dayNames[d]).join(', ');
+        const runsOnDOW = (cfg, dow) => !cfg.days || cfg.days.includes(dow);
+        
+        scheduleData.forEach(item => {
+            if (!runsOnDOW(item, currentDOW)) return; // Ten blok nie leci tego dnia cyklu
+            
+            const seriesFolders = item.folders || [item.folder];
+            const programKey = seriesFolders.join('|');
+            
+            // Płaskie łączenie odcinków z przypisanych folderów tak jak robi to TV
+            let allEpisodes = [];
+            for (const f of seriesFolders) {
+                if (episodesDB[f]) {
+                    episodesDB[f].forEach(fileName => {
+                        allEpisodes.push({ folder: f, file: fileName });
+                    });
+                }
+            }
+            
+            if (allEpisodes.length === 0) return;
+
+            const programConfigs = scheduleData.filter(cfg => {
+                const f = cfg.folders || [cfg.folder];
+                return f.join('|') === programKey;
+            });
+            
+            // Zliczanie historycznych emisji od pierwszego dnia cyklu do dzisiaj
+            let totalPastEpisodes = 0;
+            for (let d = 1; d < cycleDay; d++) {
+                const dow = ((d - 1) % 7) + 1;
+                for (const cfg of programConfigs) {
+                    if (runsOnDOW(cfg, dow)) {
+                        totalPastEpisodes++;
+                    }
+                }
+            }
+            
+            const todaysConfigs = programConfigs.filter(cfg => runsOnDOW(cfg, currentDOW)).sort((a,b) => a.hour - b.hour);
+            const H = todaysConfigs.length;
+            const i = todaysConfigs.findIndex(cfg => cfg.hour === item.hour);
+            
+            // --- ODCINEK 1 (pierwsza połowa godziny) ---
+            const slotIndex0 = i * 2 + 0;
+            const targetIndex0 = totalPastEpisodes - H + slotIndex0;
+            const safeIndex0 = ((targetIndex0 % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
+            const ep0 = allEpisodes[safeIndex0];
+            
+            // --- ODCINEK 2 (druga połowa godziny) ---
+            const slotIndex1 = i * 2 + 1;
+            const targetIndex1 = totalPastEpisodes - H + slotIndex1;
+            const safeIndex1 = ((targetIndex1 % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
+            const ep1 = allEpisodes[safeIndex1];
+            
+            // --- RENDEROWANIE WIDOKU ---
+            const el = document.createElement('div');
+            el.className = 'schedule-item';
+            
+            const timeHTML = `<div class="time-block">${formatTime(item.hour)}</div>`;
+            
+            let playingHTML = '';
+            
+            // Estetyczne zgrupowanie, jeśli oba odcinki bloku pochodzą z tego samego folderu
+            if (ep0 && ep1 && ep0.folder === ep1.folder) {
+                playingHTML += `
+                    <div class="ep-info">
+                        <span class="folder-tag">${ep0.folder}</span>
+                        <span class="ep-name">${ep0.file}</span>
+                        <span class="ep-name">${ep1.file}</span>
+                    </div>`;
+            } else {
+                if (ep0) {
+                    playingHTML += `
+                        <div class="ep-info">
+                            <span class="folder-tag">${ep0.folder}</span>
+                            <span class="ep-name">${ep0.file}</span>
+                        </div>`;
+                }
+                if (ep1) {
+                    playingHTML += `
+                        <div class="ep-info">
+                            <span class="folder-tag">${ep1.folder}</span>
+                            <span class="ep-name">${ep1.file}</span>
+                        </div>`;
+                }
+            }
+            
+            const contentHTML = `
+                <div class="content-block">
+                    <h3 class="title">${item.title}</h3>
+                    <div class="folders">${playingHTML}</div>
+                </div>
+            `;
+            
+            el.innerHTML = timeHTML + contentHTML;
+            scheduleList.appendChild(el);
+        });
+
+        // Debug info na dole pokazujące jak przeliczył się czas Unix
+        const infoDiv = document.createElement('div');
+        infoDiv.style.textAlign = 'center';
+        infoDiv.style.color = '#555';
+        infoDiv.style.marginTop = '25px';
+        infoDiv.style.fontSize = '0.85rem';
+        infoDiv.innerText = `Symulacja wewnętrzna TV - dzień cyklu: ${cycleDay}/182 | DOW: ${currentDOW}`;
+        scheduleList.appendChild(infoDiv);
     }
 
-    scheduleData.forEach(item => {
-        const el = document.createElement('div');
-        el.className = 'schedule-item';
-        
-        const timeHTML = `<div class="time-block">${formatTime(item.hour)}</div>`;
-        
-        const foldersHTML = item.folders.map(folder => 
-            `<span class="folder-tag">📁 ${folder}</span>`
-        ).join('');
-        
-        const contentHTML = `
-            <div class="content-block">
-                <h3 class="title">${item.title}</h3>
-                <div class="days">📅 ${getDaysLabel(item.days)}</div>
-                <div class="folders">${foldersHTML}</div>
-            </div>
-        `;
-        
-        el.innerHTML = timeHTML + contentHTML;
-        scheduleList.appendChild(el);
+    // Nasłuchiwanie zmian w kalendarzu
+    dateInput.addEventListener('change', (e) => {
+        renderSchedule(e.target.value);
     });
+    
+    // Odpalenie po załadowaniu strony
+    renderSchedule(dateInput.value);
 </script>
-
 </body>
 </html>
