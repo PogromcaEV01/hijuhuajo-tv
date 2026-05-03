@@ -422,7 +422,14 @@ btnMobileFullscreen.addEventListener("click", () => {
   }
   settingsMenu.classList.remove("show"); // Zamyka menu po kliknięciu
 });
-
+  // Zmiana tekstu przycisku w zależności od stanu pełnego ekranu
+document.addEventListener("fullscreenchange", () => {
+  if (document.fullscreenElement) {
+    btnMobileFullscreen.innerText = "W ramce";
+  } else {
+    btnMobileFullscreen.innerText = "Pełny ekran";
+  }
+});
 // 8. Pełny ekran - Zmodyfikowany pod kątem PC vs Telefon
 btnFullscreen.addEventListener("click", () => {
   if (!document.fullscreenElement) {
