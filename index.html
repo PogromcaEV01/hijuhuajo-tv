@@ -248,10 +248,10 @@
           <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
         </svg>
         <div id="settings-menu">
-          <div class="menu-item" id="btn-schedule">Ramówka</div>
-          <div class="menu-item" id="btn-pip">Obraz w obrazie</div>
-          <div class="menu-item" id="btn-toggle-info">Ukryj informacje</div>
-          <div class="menu-item" id="btn-mobile-fullscreen" style="display: none;">Pełny ekran</div>
+          <div class="menu-item" id="btn-schedule">ramówka</div>
+          <div class="menu-item" id="btn-pip">obraz w obrazie</div>
+          <div class="menu-item" id="btn-toggle-info">ukryj informacje</div>
+          <div class="menu-item" id="btn-mobile-fullscreen" style="display: none;">pełny ekran</div>
         </div>
       </div>
 
@@ -399,9 +399,9 @@ btnPip.addEventListener("click", async () => {
 btnToggleInfo.addEventListener("click", () => {
   infoDiv.classList.toggle("hidden-info");
   if (infoDiv.classList.contains("hidden-info")) {
-    btnToggleInfo.innerText = "Pokaż informacje";
+    btnToggleInfo.innerText = "pokaż informacje";
   } else {
-    btnToggleInfo.innerText = "Ukryj informacje";
+    btnToggleInfo.innerText = "ukryj informacje";
   }
   settingsMenu.classList.remove("show");
 });
@@ -621,8 +621,8 @@ function sync() {
   }
 
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-  const typeLabel = currentIsAmbient ? '🌿 AMBIENT' : '📺 TRWA';
-  const episodeInfo = slotIndex < H ? 'Powtórka' : 'Premiera';
+  const typeLabel = currentIsAmbient ? '🌿 ambient' : '📺 trwa';
+  const episodeInfo = slotIndex < H ? 'powtórka' : 'premiera';
   const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
 
   document.getElementById("info").innerText =
