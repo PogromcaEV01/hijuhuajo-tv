@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ramówka Emisji</title>
+    <title>ramówka emisji</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -151,11 +151,11 @@
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
-        Wróć do TV
+        wróć do tv
     </a>
 
 <div class="schedule-container">
-    <h1>📺 Ramówka Transmisji</h1>
+    <h1>📺 ramówka transmisji</h1>
     <div id="schedule-list"></div>
 </div>
 
@@ -201,15 +201,15 @@
     }
 
     function getDaysLabel(days) {
-        if (!days) return "Codziennie";
+        if (!days) return "codziennie";
         
         const isWeekdays = days.join(',') === '1,2,3,4,5';
         const isWeekend = days.join(',') === '6,7';
         
-        if (isWeekdays) return "Poniedziałek - Piątek";
-        if (isWeekend) return "Sobota - Niedziela";
+        if (isWeekdays) return "poniedziałek - piątek";
+        if (isWeekend) return "sobota - niedziela";
         
-        const dayNames = ["", "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
+        const dayNames = ["", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"];
         return days.map(d => dayNames[d]).join(', ');
     }
 
