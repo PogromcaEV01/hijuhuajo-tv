@@ -9,8 +9,8 @@
     body {
       margin: 0;
       background: radial-gradient(circle at center, #2a2a2a 0%, #000000 100%);
-      height: 100vh; /* Fallback dla starszych przeglądarek */
-      height: 100dvh; /* Dynamiczna wysokość rozwiązująca problem ucinania na mobilkach */
+      height: 100vh;
+      height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -37,7 +37,6 @@
       cursor: default;
     }
 
-    /* Klasa dodawana z JS by ukryć kursor podczas oglądania */
     .tv-screen.hide-cursor {
       cursor: none;
     }
@@ -49,7 +48,19 @@
       display: block;
     }
 
-    /* Pasek informacyjny w lewym górnym rogu */
+    /* --- STYL NAKŁADKI DO PRZEJŚĆ --- */
+    #transition-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+    }
+
     #info {
       position: absolute;
       top: 15px; 
@@ -65,13 +76,11 @@
       transition: opacity 0.3s ease;
     }
 
-    /* Klasa ukrywająca pasek informacyjny */
     #info.hidden-info {
       opacity: 0;
       pointer-events: none;
     }
 
-    /* --- STYLIZACJA WŁASNEGO PASKA KONTROLNEGO --- */
     #custom-controls {
       position: absolute;
       bottom: 0;
@@ -80,22 +89,18 @@
       background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
       display: flex;
       align-items: center;
-      /* Zmniejszone marginesy dla smuklejszego paska */
       padding: 10px 15px 8px 15px;
       box-sizing: border-box;
       color: white;
-      /* Animacja zanikania wydłużona do 0.8s dla płynności */
       transition: opacity 0.8s ease;
-      opacity: 0; /* Ukryte domyślnie */
+      opacity: 0;
       z-index: 20;
     }
 
-    /* Klasa aktywująca pasek nadawana przez JS */
     #custom-controls.active {
       opacity: 1;
     }
 
-    /* Zmniejszone ikony (z 24px na 20px) */
     .ctrl-icon {
       fill: #ffffff;
       width: 20px;
@@ -109,7 +114,6 @@
       fill: #00ffcc;
     }
 
-    /* Sekcja Głośności (ikona + rozsuwany suwak) */
     .vol-wrapper {
       display: flex;
       align-items: center;
@@ -135,7 +139,6 @@
       margin-left: 5px;
     }
 
-    /* Zablokowany pasek postępu */
     #progress-container {
       flex-grow: 1;
       height: 4px;
@@ -152,7 +155,6 @@
       position: relative;
     }
 
-    /* Zmniejszona kulka na pasku (z 12px na 10px) */
     #progress-thumb {
       width: 10px;
       height: 10px;
@@ -164,7 +166,6 @@
       box-shadow: 0 0 4px rgba(0,0,0,0.5);
     }
 
-    /* Jeszcze mniejszy czas (11px) */
     #time-display {
       font-size: 12px;
       font-family: sans-serif;
@@ -173,7 +174,6 @@
       margin-right: 12px;
     }
 
-    /* Sekcja Menu (Trzy kropki) */
     .menu-wrapper {
       position: relative;
       display: flex;
@@ -182,8 +182,8 @@
 
     #settings-menu {
       position: absolute;
-      bottom: 35px; /* Dopasowane do niższego paska */
-      right: 0; /* Menu wyrównane do prawej krawędzi, by nie wychodziło za ekran */
+      bottom: 35px;
+      right: 0;
       background: rgba(20, 20, 20, 0.9);
       border-radius: 6px;
       padding: 5px 0;
@@ -218,6 +218,7 @@
 <div class="tv-container">
   <div class="tv-screen" id="tv-screen">
     <video id="player" autoplay muted></video>
+    <canvas id="transition-overlay"></canvas>
     <div id="info">Inicjalizacja systemu...</div>
 
     <div id="custom-controls">
@@ -265,7 +266,6 @@ let videosDB = {};
 const ambientFile = "https://aelwyd.space/ambient.mp4";
 let currentIsAmbient = false;
 
-// --- DOM elements ---
 const video = document.getElementById("player");
 const progressBar = document.getElementById("progress-bar");
 const timeDisplay = document.getElementById("time-display");
@@ -283,11 +283,9 @@ const btnPip = document.getElementById("btn-pip");
 const btnToggleInfo = document.getElementById("btn-toggle-info");
 const btnMobileFullscreen = document.getElementById("btn-mobile-fullscreen");
 
-// --- LOGIKA ZANIKANIA PASKA (AUTO-HIDE) ---
 let activityTimeout;
 let isHoveringControls = false;
 
-// Śledzimy, czy myszka jest nad panelem dolnym
 customControls.addEventListener("mouseenter", () => isHoveringControls = true);
 customControls.addEventListener("mouseleave", () => isHoveringControls = false);
 
@@ -297,13 +295,11 @@ function resetActivityTimer() {
   
   clearTimeout(activityTimeout);
   
-  // Odczekaj równo 2 sekundy, po czym rozpocznij powolne zanikanie (0.8s z CSS)
   activityTimeout = setTimeout(() => {
-    // Ukrywamy pasek tylko jeśli myszka nie jest na nim zaparkowana
     if (!isHoveringControls) {
       tvScreen.classList.add("hide-cursor");
       customControls.classList.remove("active");
-      settingsMenu.classList.remove("show"); // ukrywamy menu przy znikaniu
+      settingsMenu.classList.remove("show");
     }
   }, 2000);
 }
@@ -311,7 +307,6 @@ function resetActivityTimer() {
 tvScreen.addEventListener("mousemove", resetActivityTimer);
 tvScreen.addEventListener("click", resetActivityTimer);
 
-// Po opuszczeniu telewizora myszką - ukrywamy od razu
 tvScreen.addEventListener("mouseleave", () => {
   clearTimeout(activityTimeout);
   tvScreen.classList.remove("hide-cursor");
@@ -319,14 +314,10 @@ tvScreen.addEventListener("mouseleave", () => {
   settingsMenu.classList.remove("show");
 });
 
-// --- LOGIKA WŁASNEGO ODTWARZACZA ---
-
-// BEZWZGLĘDNA BLOKADA ZATRZYMANIA WIDEO
 video.addEventListener("pause", () => {
     video.play().catch(() => {});
 });
 
-// Formatowanie czasu w stylu "-M:SS"
 function formatTimeRemaining(currentTime, duration) {
   if (isNaN(duration) || isNaN(currentTime)) return "-0:00";
   const remaining = Math.max(0, duration - currentTime);
@@ -335,7 +326,6 @@ function formatTimeRemaining(currentTime, duration) {
   return `-${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// 1. Aktualizacja paska postępu
 video.addEventListener("timeupdate", () => {
   if (video.duration) {
     const percent = (video.currentTime / video.duration) * 100;
@@ -344,14 +334,12 @@ video.addEventListener("timeupdate", () => {
   }
 });
 
-// 2. Wyciszanie (Mute)
 btnMute.addEventListener("click", () => {
   video.muted = !video.muted;
   btnMute.style.opacity = video.muted ? "0.5" : "1";
   volumeSlider.value = video.muted ? 0 : video.volume;
 });
 
-// 3. Suwak Głośności
 volumeSlider.addEventListener("input", (e) => {
   video.volume = e.target.value;
   if (video.volume > 0) {
@@ -363,25 +351,21 @@ volumeSlider.addEventListener("input", (e) => {
   }
 });
 
-// 4. Trzy kropki (Menu)
 btnMenu.addEventListener("click", (e) => {
-  e.stopPropagation(); // Zatrzymuje kliknięcie przed zamknięciem menu
+  e.stopPropagation();
   settingsMenu.classList.toggle("show");
 });
 
-// Zamknij menu klikając poza nim
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".menu-wrapper")) {
     settingsMenu.classList.remove("show");
   }
 });
 
-// 5. Opcja: Harmonogram
 btnSchedule.addEventListener("click", () => {
   window.location.href = "ramowka.html"; 
 });
 
-// 6. Opcja: Obraz w obrazie (PiP)
 btnPip.addEventListener("click", async () => {
   try {
     if (document.pictureInPictureElement) {
@@ -395,7 +379,6 @@ btnPip.addEventListener("click", async () => {
   settingsMenu.classList.remove("show");
 });
 
-// 7. Opcja: Ukryj / Pokaż informacje
 btnToggleInfo.addEventListener("click", () => {
   infoDiv.classList.toggle("hidden-info");
   if (infoDiv.classList.contains("hidden-info")) {
@@ -406,7 +389,6 @@ btnToggleInfo.addEventListener("click", () => {
   settingsMenu.classList.remove("show");
 });
 
-// --- NOWA OPCJA: Pełny ekran bez ramki (Tylko Mobile) ---
 const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 if (isMobileDevice) {
   btnMobileFullscreen.style.display = "block";
@@ -420,9 +402,9 @@ btnMobileFullscreen.addEventListener("click", () => {
   } else {
     document.exitFullscreen();
   }
-  settingsMenu.classList.remove("show"); // Zamyka menu po kliknięciu
+  settingsMenu.classList.remove("show");
 });
-  // Zmiana tekstu przycisku w zależności od stanu pełnego ekranu
+
 document.addEventListener("fullscreenchange", () => {
   if (document.fullscreenElement) {
     btnMobileFullscreen.innerText = "W ramce";
@@ -430,14 +412,10 @@ document.addEventListener("fullscreenchange", () => {
     btnMobileFullscreen.innerText = "Pełny ekran";
   }
 });
-// 8. Pełny ekran - Zmodyfikowany pod kątem PC vs Telefon
+
 btnFullscreen.addEventListener("click", () => {
   if (!document.fullscreenElement) {
-    // Szybkie sprawdzenie, czy użytkownik jest na telefonie/tablecie
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Jeśli telefon -> pełny ekran dla całej strony (z ramkami). 
-    // Jeśli PC -> pełny ekran tylko dla ekranu TV (bez ramek).
     const elementToFullscreen = isMobile ? document.documentElement : tvScreen;
 
     elementToFullscreen.requestFullscreen().catch(err => {
@@ -448,12 +426,9 @@ btnFullscreen.addEventListener("click", () => {
   }
 });
 
-// Aktualizacja na starcie metadanych
 video.addEventListener("loadedmetadata", () => {
   timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
 });
-
-// --- LOGIKA RAMÓWKI TV ---
 
 function getCycleDay() {
   const now = new Date();
@@ -519,6 +494,29 @@ function playAmbient() {
     video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
     video.play().catch(() => {});
   };
+}
+
+function playAmbientWithTransition() {
+  if (currentIsAmbient) return;
+  
+  const overlay = document.getElementById("transition-overlay");
+  const ctx = overlay.getContext("2d");
+
+  if (video.videoWidth > 0 && video.videoHeight > 0) {
+    overlay.width = video.videoWidth;
+    overlay.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, overlay.width, overlay.height);
+
+    overlay.style.transition = "none";
+    overlay.style.opacity = "1";
+
+    void overlay.offsetWidth;
+
+    overlay.style.transition = "opacity 2s ease";
+    overlay.style.opacity = "0";
+  }
+
+  playAmbient();
 }
 
 function sync() {
@@ -610,12 +608,12 @@ function sync() {
     };
 
     video.onended = () => {
-      if (!currentIsAmbient) playAmbient();
+      if (!currentIsAmbient) playAmbientWithTransition();
     };
   } else {
     if (!currentIsAmbient && video.readyState >= 1) {
       if (offsetSec >= parseFloat(video.dataset.epDuration || 99999)) {
-        playAmbient();
+        playAmbientWithTransition();
       }
     }
   }
