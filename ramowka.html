@@ -191,6 +191,11 @@
             }
         }
     </style>
+
+    <!-- Biblioteka Flatpickr i jej Ciemny Motyw -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+</head>
 </head>
 <body>
 
@@ -987,5 +992,41 @@
     // Odpalenie po załadowaniu strony
     renderSchedule(dateInput.value);
 </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/pl.js"></script>
+
+<script>
+    /* ... TUTAJ ZOSTAWIASZ SWOJĄ BAZĘ ODCINKÓW episodesDB i scheduleData ... */
+
+    const scheduleList = document.getElementById('schedule-list');
+    const dateInput = document.getElementById('schedule-date');
+
+    function formatTime(hour) {
+        return `${hour.toString().padStart(2, '0')}:00`;
+    }
+
+    // Twoja funkcja renderSchedule bez żadnych zmian
+    function renderSchedule(targetDateString) {
+        // ... (tutaj zostaje Twój kod z pliku źródłowego renderujący ramówkę)
+    }
+
+    // Odpalenie flatpickr, który podmieni nudny biały input
+    flatpickr(dateInput, {
+        locale: "pl", // język polski
+        defaultDate: "today", // od razu wybiera dzisiaj
+        minDate: "2026-05-01",
+        disableMobile: "true", // wymusza ładny wygląd nawet na telefonach
+        onChange: function(selectedDates, dateStr, instance) {
+            renderSchedule(dateStr); // odświeża ramówkę po kliknięciu nowej daty
+        }
+    });
+
+    // Uruchomienie przy włączeniu strony z dzisiejszą datą
+    const today = new Date();
+    const localIsoDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    renderSchedule(localIsoDate);
+
+</script>
+</body>
 </body>
 </html>
