@@ -434,9 +434,8 @@ async function loadCSV() {
       durSec = durParts[0] * 60 + durParts[1];
     }
 
-    // ZMIANA (Opcja 1): Wyciąganie samej nazwy folderu na końcu ścieżki
-    const pathParts = fullPath.replace(/\\/g, '/').split('/');
-    const folderName = pathParts[pathParts.length - 1] || fullPath; 
+    // ZMIANA: Usunięcie C:\videos\ i zamiana ukośników
+    const folderName = fullPath.replace(/^C:\\videos\\/i, '').replace(/\\/g, '/');
 
     if (!db[folderName]) db[folderName] = [];
     db[folderName].push({
@@ -626,6 +625,7 @@ function sync() {
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
   if (playback.type === 'video') {
+    // ZMIANA: Kodowanie każdego folderu w zagnieżdżonej ścieżce osobno
     const encodedFolder = playback.folder.split('/').map(encodeURIComponent).join('/');
     const videoUrl = `https://aelwyd.space/${encodedFolder}/${encodeURIComponent(playback.file)}`;
     const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
@@ -668,3 +668,4 @@ startTV();
 </script>
 </body>
 </html>
+```[cite: 1]
