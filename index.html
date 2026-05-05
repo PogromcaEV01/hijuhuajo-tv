@@ -245,13 +245,8 @@
     </div>
   </div>
 </div>
-<script>
-// --- KONFIGURACJA ---
-// Nazwa folderu na PC, w którym trzymasz anime. 
-// Skrypt utnie całą ścieżkę z CSV (np. C:\Anime\videos\...) aż do tego folderu włącznie, 
-// żeby wygenerować link idealnie pasujący do struktury w buckecie R3.
-const baseFolderToStrip = "videos"; 
 
+<script>
 let scheduleConfig = [];
 let videosDB = {}; 
 const ambientFile = "https://aelwyd.space/ambient.mp4";
@@ -439,25 +434,12 @@ async function loadCSV() {
       durSec = durParts[0] * 60 + durParts[1];
     }
 
-    // Unifikujemy ścieżki i tworzymy tablicę folderów
-    const pathParts = fullPath.replace(/\\/g, '/').split('/');
-    const folderName = pathParts[pathParts.length - 1]; // Ostatni folder (na potrzeby DB i ramówki)
-
-    // Odcinamy wszystko do folderu bazowego zdefiniowanego w konfiguracji
-    let r3Path = "";
-    const baseIdx = pathParts.findIndex(p => p.toLowerCase() === baseFolderToStrip.toLowerCase());
-    
-    if (baseIdx !== -1) {
-      r3Path = pathParts.slice(baseIdx + 1).join('/'); 
-    } else {
-      // Fallback, jeśli ścieżka nie zawiera słowa "videos" – bierze tylko ostatni folder
-      r3Path = folderName; 
-    }
+    // ZMIANA: Usunięcie C:\videos\ i zamiana ukośników
+    const folderName = fullPath.replace(/^C:\\videos\\/i, '').replace(/\\/g, '/');
 
     if (!db[folderName]) db[folderName] = [];
     db[folderName].push({
       file: fileName + ext,
-      r3Path: r3Path,
       durationSec: durSec || 1440 
     });
   }
@@ -544,6 +526,7 @@ function simulateUpTo(target_t, currentCycleDay) {
       }
     }
 
+    // Jeśli wszystkie foldery przerobione, resetujemy do pierwszego
     if (!active_folder) {
       for (let f of valid_folders) {
         series_state[f].next_ep_idx = 0;
@@ -571,6 +554,7 @@ function simulateUpTo(target_t, currentCycleDay) {
         eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx } );
         state.next_ep_idx++;
       } else if (state.next_ep_idx === total_eps) {
+        // Ostatnia powtórka przed końcem sezonu
         eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
         state.finished = true;
       }
@@ -586,7 +570,7 @@ function simulateUpTo(target_t, currentCycleDay) {
       if (target_t >= start_t && target_t < block_end_t) {
         if (target_t < end_t) {
           current_playback = {
-            type: 'video', folder: f, file: ep_info.file, r3Path: ep_info.r3Path,
+            type: 'video', folder: f, file: ep_info.file,
             episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
             duration: duration, offsetSec: target_t - start_t,
             configTitle: config.title || f
@@ -641,9 +625,9 @@ function sync() {
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
   if (playback.type === 'video') {
-    // Poprawne zakodowanie ścieżki z zachowaniem wszystkich folderów po słowie "videos"
-    const encodedPath = playback.r3Path.split('/').map(encodeURIComponent).join('/');
-    const videoUrl = `https://aelwyd.space/${encodedPath}/${encodeURIComponent(playback.file)}`;
+    // ZMIANA: Kodowanie każdego folderu w zagnieżdżonej ścieżce osobno
+    const encodedFolder = playback.folder.split('/').map(encodeURIComponent).join('/');
+    const videoUrl = `https://aelwyd.space/${encodedFolder}/${encodeURIComponent(playback.file)}`;
     const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
 
     if (video.dataset.slotId !== slotId) {
@@ -684,3 +668,4 @@ startTV();
 </script>
 </body>
 </html>
+```[cite: 1]
