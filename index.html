@@ -409,7 +409,6 @@ function getCycleDay() {
   return (Math.floor(localEpochMs / 86400000) % 182) + 1;
 }
 
-// Zmodyfikowany parser CSV pobierający czasy trwania
 async function loadCSV() {
   const res = await fetch("anime_lista.csv");
   const text = await res.text();
@@ -425,7 +424,7 @@ async function loadCSV() {
     const fullPath = cols[0];
     const fileName = cols[1];
     const ext = cols[2];
-    const durationStr = cols[3]; // Pobieranie czasu "HH:MM:SS"
+    const durationStr = cols[3]; 
 
     let durParts = durationStr.split(':').map(Number);
     let durSec = 0;
@@ -441,7 +440,7 @@ async function loadCSV() {
     if (!db[folderName]) db[folderName] = [];
     db[folderName].push({
       file: fileName + ext,
-      durationSec: durSec || 1440 // Zabezpieczenie (domyślnie 24 min)
+      durationSec: durSec || 1440 
     });
   }
   return db;
@@ -462,17 +461,14 @@ async function startTV() {
   setInterval(sync, 5000);
 }
 
-// Logika rezerwacji bloków czasowych
 function getBlockEnd(startTimeSec, durationSec) {
   const endTimeSec = startTimeSec + durationSec;
   const startHour = Math.floor(startTimeSec / 3600);
-  const endHour = Math.floor((endTimeSec - 1) / 3600); // -1 rozwiązuje przypadek pełnej godziny
+  const endHour = Math.floor((endTimeSec - 1) / 3600); 
 
   if (endHour > startHour) {
-    // Jeśli plik wjechał na nową godzinę, zajmuje ją w całości (efekt domina)
     return (endHour + 1) * 3600;
   } else {
-    // Jeśli zmieścił się w godzinie, rezerwuje połówkę lub pełną, zależnie od tego, kiedy się kończy
     const halfHourSec = startHour * 3600 + 1800;
     if (startTimeSec < halfHourSec && endTimeSec <= halfHourSec) {
       return halfHourSec;
@@ -482,16 +478,15 @@ function getBlockEnd(startTimeSec, durationSec) {
   }
 }
 
-// Główny silnik symulujący kalendarz od Sekundy 0
 function simulateUpTo(target_t, currentCycleDay) {
-  let t = 0; // Czas w symulacji (w sekundach)
+  let t = 0; 
   let series_state = {};
   for(let f in videosDB) {
-    series_state[f] = { next_ep_idx: 0 };
+    series_state[f] = { next_ep_idx: 0, finished: false };
   }
 
   let current_playback = null;
-  const max_t = currentCycleDay * 86400; // Granica symulacji - koniec dzisiejszego dnia
+  const max_t = currentCycleDay * 86400; 
 
   while (t <= target_t && t < max_t) {
     let day = Math.floor(t / 86400) + 1;
@@ -511,59 +506,86 @@ function simulateUpTo(target_t, currentCycleDay) {
     }
 
     let folders = config.folders || [config.folder];
-    let advanced_t = t;
+    let valid_folders = folders.filter(f => videosDB[f] && videosDB[f].length > 0);
 
-    for (let f of folders) {
-      if (!videosDB[f] || videosDB[f].length === 0) continue;
-
-      let db = videosDB[f];
-      let total_eps = db.length;
-      let state = series_state[f];
-      let eps_to_play = [];
-
-      if (total_eps === 1) {
-        // Seria jednoodcinkowa (film) - tylko premiera, bez powtórek
-        eps_to_play.push( { type: 'premiere', idx: 0 } );
-      } else {
-        // Zwykłe serie i maratony
-        if (state.next_ep_idx === 0) {
-          eps_to_play.push( { type: 'premiere', idx: 0 } );
-          state.next_ep_idx++;
-        } else {
-          eps_to_play.push( { type: 'rerun', idx: (state.next_ep_idx - 1) % total_eps } );
-          eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx % total_eps } );
-          state.next_ep_idx++;
-        }
+    if (valid_folders.length === 0) {
+      let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
+      if (target_t >= t && target_t < next_hour_t) {
+        current_playback = { type: 'ambient', offsetSec: target_t - t };
       }
+      t = next_hour_t;
+      continue;
+    }
 
-      for (let ep of eps_to_play) {
-        let ep_info = db[ep.idx];
-        let duration = ep_info.durationSec;
-        let start_t = advanced_t;
-        let end_t = start_t + duration;
-        let block_end_t = getBlockEnd(start_t, duration);
-
-        if (target_t >= start_t && target_t < block_end_t) {
-          if (target_t < end_t) {
-            current_playback = {
-              type: 'video', folder: f, file: ep_info.file,
-              episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
-              duration: duration, offsetSec: target_t - start_t,
-              configTitle: config.title || f
-            };
-          } else {
-            // Czas w bloku się ostał, więc gramy ambient
-            current_playback = { type: 'ambient', offsetSec: target_t - end_t };
-          }
-        }
-        advanced_t = block_end_t;
+    let active_folder = null;
+    for (let f of valid_folders) {
+      if (!series_state[f]) series_state[f] = { next_ep_idx: 0, finished: false };
+      if (!series_state[f].finished) {
+        active_folder = f;
+        break;
       }
     }
 
-    if (advanced_t > t) {
-      t = advanced_t; // Pomyślnie zajęto czas, przesuń zegar na koniec bloku
+    // Jeśli wszystkie foldery przerobione, resetujemy do pierwszego
+    if (!active_folder) {
+      for (let f of valid_folders) {
+        series_state[f].next_ep_idx = 0;
+        series_state[f].finished = false;
+      }
+      active_folder = valid_folders[0];
+    }
+
+    let advanced_t = t;
+    let f = active_folder;
+    let db = videosDB[f];
+    let total_eps = db.length;
+    let state = series_state[f];
+    let eps_to_play = [];
+
+    if (total_eps === 1) {
+      eps_to_play.push( { type: 'premiere', idx: 0 } );
+      state.finished = true;
     } else {
-      t = Math.floor(t / 3600) * 3600 + 3600; // Pusty folder, idziemy do następnej godziny
+      if (state.next_ep_idx === 0) {
+        eps_to_play.push( { type: 'premiere', idx: 0 } );
+        state.next_ep_idx++;
+      } else if (state.next_ep_idx < total_eps) {
+        eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
+        eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx } );
+        state.next_ep_idx++;
+      } else if (state.next_ep_idx === total_eps) {
+        // Ostatnia powtórka przed końcem sezonu
+        eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
+        state.finished = true;
+      }
+    }
+
+    for (let ep of eps_to_play) {
+      let ep_info = db[ep.idx];
+      let duration = ep_info.durationSec;
+      let start_t = advanced_t;
+      let end_t = start_t + duration;
+      let block_end_t = getBlockEnd(start_t, duration);
+
+      if (target_t >= start_t && target_t < block_end_t) {
+        if (target_t < end_t) {
+          current_playback = {
+            type: 'video', folder: f, file: ep_info.file,
+            episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
+            duration: duration, offsetSec: target_t - start_t,
+            configTitle: config.title || f
+          };
+        } else {
+          current_playback = { type: 'ambient', offsetSec: target_t - end_t };
+        }
+      }
+      advanced_t = block_end_t;
+    }
+
+    if (advanced_t > t) {
+      t = advanced_t; 
+    } else {
+      t = Math.floor(t / 3600) * 3600 + 3600; 
     }
   }
   return current_playback;
@@ -592,10 +614,7 @@ function sync() {
   const m = now.getMinutes();
   const s = now.getSeconds();
   
-  // Przeliczanie obecnego czasu w sekundach od startu cyklu
   const target_t = (cycleDay - 1) * 86400 + h * 3600 + m * 60 + s;
-
-  // Odpalenie symulacji, by zobaczyć "gdzie jesteśmy" w historii telewizji
   const playback = simulateUpTo(target_t, cycleDay);
 
   if (!playback) {
@@ -639,7 +658,7 @@ function sync() {
   } else if (playback.type === 'ambient') {
     playAmbient(playback.offsetSec);
     document.getElementById("info").innerText =
-      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} |`;
+      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} | Przerwa`;
   }
 }
 
