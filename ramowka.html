@@ -61,7 +61,6 @@
             letter-spacing: 2px;
         }
 
-        /* Sekcja wyboru daty */
         .controls {
             text-align: center;
             margin-bottom: 30px;
@@ -174,6 +173,13 @@
             font-size: 0.8rem;
         }
 
+        .loading-info {
+            text-align: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-top: 40px;
+        }
+
         @media (max-width: 500px) {
             .back-btn {
                 padding: 8px 15px;
@@ -209,11 +215,13 @@
         <input type="date" id="schedule-date" min="2026-05-01">
     </div>
 
-    <div id="schedule-list"></div>
+    <div id="schedule-list">
+        <div class="loading-info">Pobieranie bazy danych...</div>
+    </div>
 </div>
 
 <script>
-    // --- ZMIENNE GLOBALNE ---
+    // Globalne zmienne dla bazy odcinków i ramówki
     let episodesDB = {};
     let scheduleData = [];
 
@@ -229,53 +237,51 @@
         return `${hour.toString().padStart(2, '0')}:00`;
     }
 
-    // --- FUNKCJE POBIERAJĄCE DANE ---
-    async function loadCSV() {
-        const res = await fetch("anime_lista.csv");
-        const text = await res.text();
-        const lines = text.trim().split('\n');
-        const db = {};
-
-        for(let i = 0; i < lines.length; i++) {
-            const row = lines[i];
-            if (!row.includes('";"')) continue;
-            const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
-            if (cols.length < 4) continue;
-
-            const fullPath = cols[0];
-            const fileName = cols[1];
-            const ext = cols[2];
-
-            const pathParts = fullPath.split(/\\|\//);
-            const folderName = pathParts[pathParts.length - 1];
-
-            if (!db[folderName]) db[folderName] = [];
-            // Zapisujemy nazwę pliku z rozszerzeniem do wyświetlenia
-            db[folderName].push(fileName + ext);
-        }
-        return db;
-    }
-
-    async function loadDataAndRender() {
-        scheduleList.innerHTML = '<p style="text-align:center;">Ładowanie danych z serwera...</p>';
+    async function loadData() {
         try {
-            // Pobranie pliku JSON z ramówką
+            // 1. Pobieranie pliku ramowka.json
             const resJson = await fetch("ramowka.json");
             scheduleData = await resJson.json();
 
-            // Pobranie i parsowanie pliku CSV z listą odcinków
-            episodesDB = await loadCSV();
+            // 2. Pobieranie i parsowanie pliku anime_lista.csv w taki sam sposób jak w index.html
+            const resCsv = await fetch("anime_lista.csv");
+            const csvText = await resCsv.text();
+            const lines = csvText.trim().split('\n');
+            
+            for(let i = 0; i < lines.length; i++) {
+                const row = lines[i];
+                if (!row.includes('";"')) continue;
+                const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
+                if (cols.length < 4) continue;
 
-            // Renderowanie widoku dla wybranej daty
+                const fullPath = cols[0];
+                const fileName = cols[1];
+                const ext = cols[2];
+
+                // Wyciąganie nazwy ostatniego folderu
+                const pathParts = fullPath.replace(/\\/g, '/').split('/');
+                const folderName = pathParts[pathParts.length - 1]; 
+
+                if (!episodesDB[folderName]) {
+                    episodesDB[folderName] = [];
+                }
+                
+                // Do ramówki potrzebujemy jedynie pełnej nazwy pliku
+                episodesDB[folderName].push(fileName + ext);
+            }
+
+            // Po załadowaniu danych generujemy ramówkę dla wybranej daty
             renderSchedule(dateInput.value);
+
         } catch (error) {
-            console.error("Błąd ładowania danych: ", error);
-            scheduleList.innerHTML = '<p style="text-align:center; color:red;">Nie udało się załadować danych ramówki (ramowka.json lub anime_lista.csv).</p>';
+            console.error("Błąd podczas wczytywania danych:", error);
+            scheduleList.innerHTML = `<div class="loading-info" style="color: red;">Nie udało się załadować danych ramówki lub bazy odcinków.</div>`;
         }
     }
 
-    // --- LOGIKA RENDEROWANIA ---
     function renderSchedule(targetDateString) {
+        if (!scheduleData.length || Object.keys(episodesDB).length === 0) return; // Zapobiega renderowaniu bez danych
+
         scheduleList.innerHTML = '';
         
         // Bezpieczne parsowanie daty z kalendarza, odporne na przesunięcia czasowe
@@ -291,12 +297,11 @@
         const runsOnDOW = (cfg, dow) => !cfg.days || cfg.days.includes(dow);
         
         scheduleData.forEach(item => {
-            if (!runsOnDOW(item, currentDOW)) return; // Ten blok nie leci tego dnia cyklu
+            if (!runsOnDOW(item, currentDOW)) return; 
             
             const seriesFolders = item.folders || [item.folder];
             const programKey = seriesFolders.join('|');
             
-            // Płaskie łączenie odcinków z przypisanych folderów tak jak robi to TV
             let allEpisodes = [];
             for (const f of seriesFolders) {
                 if (episodesDB[f]) {
@@ -313,7 +318,6 @@
                 return f.join('|') === programKey;
             });
             
-            // Zliczanie historycznych emisji od pierwszego dnia cyklu do dzisiaj
             let totalPastEpisodes = 0;
             for (let d = 1; d < cycleDay; d++) {
                 const dow = ((d - 1) % 7) + 1;
@@ -328,19 +332,16 @@
             const H = todaysConfigs.length;
             const i = todaysConfigs.findIndex(cfg => cfg.hour === item.hour);
             
-            // --- ODCINEK 1 (pierwsza połowa godziny) ---
             const slotIndex0 = i * 2 + 0;
             const targetIndex0 = totalPastEpisodes - H + slotIndex0;
             const safeIndex0 = ((targetIndex0 % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
             const ep0 = allEpisodes[safeIndex0];
             
-            // --- ODCINEK 2 (druga połowa godziny) ---
             const slotIndex1 = i * 2 + 1;
             const targetIndex1 = totalPastEpisodes - H + slotIndex1;
             const safeIndex1 = ((targetIndex1 % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
             const ep1 = allEpisodes[safeIndex1];
             
-            // --- RENDEROWANIE WIDOKU ---
             const el = document.createElement('div');
             el.className = 'schedule-item';
             
@@ -348,7 +349,6 @@
             
             let playingHTML = '';
             
-            // Estetyczne zgrupowanie, jeśli oba odcinki bloku pochodzą z tego samego folderu
             if (ep0 && ep1 && ep0.folder === ep1.folder) {
                 playingHTML += `
                     <div class="ep-info">
@@ -384,7 +384,6 @@
             scheduleList.appendChild(el);
         });
 
-        // Debug info na dole pokazujące jak przeliczył się czas Unix
         const infoDiv = document.createElement('div');
         infoDiv.style.textAlign = 'center';
         infoDiv.style.color = '#555';
@@ -396,14 +395,11 @@
 
     // Nasłuchiwanie zmian w kalendarzu
     dateInput.addEventListener('change', (e) => {
-        // Upewniamy się, że dane są załadowane zanim pozwolimy przerysować
-        if(scheduleData.length > 0) {
-            renderSchedule(e.target.value);
-        }
+        renderSchedule(e.target.value);
     });
     
-    // Odpalenie pobierania i budowania strony
-    loadDataAndRender();
+    // Uruchamiamy pobieranie danych i renderowanie po uruchomieniu skryptu
+    loadData();
 </script>
 </body>
 </html>
