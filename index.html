@@ -440,6 +440,7 @@ async function loadCSV() {
     if (!db[folderName]) db[folderName] = [];
     db[folderName].push({
       file: fileName + ext,
+      fullPath: fullPath,
       durationSec: durSec || 1440 
     });
   }
@@ -570,7 +571,7 @@ function simulateUpTo(target_t, currentCycleDay) {
       if (target_t >= start_t && target_t < block_end_t) {
         if (target_t < end_t) {
           current_playback = {
-            type: 'video', folder: f, file: ep_info.file,
+            type: 'video', folder: f, file: ep_info.file, fullPath: ep_info.fullPath,
             episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
             duration: duration, offsetSec: target_t - start_t,
             configTitle: config.title || f
@@ -625,7 +626,8 @@ function sync() {
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
   if (playback.type === 'video') {
-    const videoUrl = `https://aelwyd.space/${encodeURIComponent(playback.folder)}/${encodeURIComponent(playback.file)}`;
+    const encodedPath = playback.fullPath.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
+    const videoUrl = `https://aelwyd.space/${encodedPath}/${encodeURIComponent(playback.file)}`;
     const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
 
     if (video.dataset.slotId !== slotId) {
