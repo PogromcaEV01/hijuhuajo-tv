@@ -440,7 +440,6 @@ async function loadCSV() {
     if (!db[folderName]) db[folderName] = [];
     db[folderName].push({
       file: fileName + ext,
-      fullPath: fullPath, // ZAPISUJEMY ORYGINALNĄ PEŁNĄ ŚCIEŻKĘ
       durationSec: durSec || 1440 
     });
   }
@@ -527,6 +526,7 @@ function simulateUpTo(target_t, currentCycleDay) {
       }
     }
 
+    // Jeśli wszystkie foldery przerobione, resetujemy do pierwszego
     if (!active_folder) {
       for (let f of valid_folders) {
         series_state[f].next_ep_idx = 0;
@@ -554,6 +554,7 @@ function simulateUpTo(target_t, currentCycleDay) {
         eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx } );
         state.next_ep_idx++;
       } else if (state.next_ep_idx === total_eps) {
+        // Ostatnia powtórka przed końcem sezonu
         eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
         state.finished = true;
       }
@@ -570,7 +571,6 @@ function simulateUpTo(target_t, currentCycleDay) {
         if (target_t < end_t) {
           current_playback = {
             type: 'video', folder: f, file: ep_info.file,
-            fullPath: ep_info.fullPath, // PRZEKAZUJEMY PEŁNĄ ŚCIEŻKĘ DO ODTWARZANIA
             episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
             duration: duration, offsetSec: target_t - start_t,
             configTitle: config.title || f
@@ -625,10 +625,7 @@ function sync() {
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
   if (playback.type === 'video') {
-    // BUDUJEMY URL NA BAZIE PEŁNEJ ŚCIEŻKI Z PLIKU CSV
-    const encodedPath = playback.fullPath.split(/\\|\//).map(encodeURIComponent).join('/');
-    const videoUrl = `https://aelwyd.space/${encodedPath}/${encodeURIComponent(playback.file)}`;
-    
+    const videoUrl = `https://aelwyd.space/${encodeURIComponent(playback.folder)}/${encodeURIComponent(playback.file)}`;
     const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
 
     if (video.dataset.slotId !== slotId) {
