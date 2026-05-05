@@ -3,238 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ramówka emisji</title>
+    <title>Hijuhuajo TV - Ramówka</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --accent: #bb86fc;
+            --bg-color: #0f0f13;
+            --surface-color: #1c1c24;
+            --border-color: #2d2d3a;
+            --text-main: #ffffff;
+            --text-muted: #a0a0b0;
+            --accent: #ff2a5f;
+            --accent-hover: #ff4d79;
+            --day-bg: #252530;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .schedule-container {
-            max-width: 800px;
-            width: 100%;
         }
 
-        /* --- ZMIENIONY STYL PRZYCISKU POWROTU --- */
-        .back-btn {
-            position: fixed; /* Przykleja przycisk do ekranu */
-            top: 20px;       /* Odległość od góry */
-            left: 20px;      /* Odległość od lewej */
-            z-index: 100;    /* Gwarantuje, że przycisk będzie zawsze na wierzchu */
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background-color: var(--card-bg);
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 8px;
-            border: 1px solid rgba(187, 134, 252, 0.3);
-            transition: all 0.2s ease-in-out;
-        }
-
-        .back-btn:hover {
-            background-color: var(--accent);
-            color: #121212;
-            transform: scale(1.05); /* Delikatne powiększenie zamiast przesuwania */
-        }
-        
         h1 {
             text-align: center;
             color: var(--accent);
-            margin-top: 60px; /* Zrobienie miejsca na górze, by przycisk nie zasłaniał tytułu na telefonach */
-            margin-bottom: 30px;
             text-transform: uppercase;
             letter-spacing: 2px;
-        }
-        
-        .schedule-item {
-            background-color: var(--card-bg);
-            margin-bottom: 15px;
-            border-radius: 10px;
-            display: flex;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease-in-out;
-        }
-        
-        .schedule-item:hover {
-            transform: translateX(5px);
-            border-left: 4px solid var(--accent);
-        }
-        
-        .time-block {
-            background-color: var(--accent);
-            color: #121212;
-            font-weight: 900;
-            font-size: 1.4rem;
-            padding: 20px;
-            min-width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        
-        .content-block {
-            padding: 15px 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0 0 8px 0;
-            color: #ffffff;
-        }
-        
-        .days {
-            font-size: 0.85rem;
-            color: var(--accent);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .folders {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .folder-tag {
-            background-color: #2c2c2c;
-            color: #cfcfcf;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            border: 1px solid #444;
+            margin-bottom: 30px;
         }
 
-        /* Drobna poprawka dla bardzo małych ekranów (np. węższe telefony) */
-        @media (max-width: 500px) {
-            .back-btn {
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
-            h1 {
-                margin-top: 50px;
-                font-size: 1.5rem;
-            }
+        .schedule-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background-color: var(--surface-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--day-bg);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .hour-cell {
+            background-color: var(--day-bg);
+            font-weight: bold;
+            text-align: center;
+            width: 80px;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+
+        td:hover {
+            background-color: rgba(255, 42, 95, 0.05);
+        }
+
+        .block-title {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+            display: block;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .show-container {
+            margin-bottom: 8px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .folder-name {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            display: block;
+        }
+
+        .episode-name {
+            font-size: 0.85em;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .empty-slot {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .current-day {
+            background-color: rgba(255, 42, 95, 0.1);
         }
     </style>
 </head>
 <body>
 
-    <!-- Przycisk powrotu wyciągnięty z kontenera, żeby łatwiej pozycjonować go na całym ekranie -->
-    <a href="index.html" class="back-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        wróć do tv
-    </a>
+    <h1>📺 Hijuhuajo TV - Tygodniowa Ramówka</h1>
+    
+    <div class="schedule-container">
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th class="hour-cell">Godzina</th>
+                    <th>Poniedziałek</th>
+                    <th>Wtorek</th>
+                    <th>Środa</th>
+                    <th>Czwartek</th>
+                    <th>Piątek</th>
+                    <th>Sobota</th>
+                    <th>Niedziela</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
 
-<div class="schedule-container">
-    <h1>📺 ramówka transmisji</h1>
-    <div id="schedule-list"></div>
-</div>
+    <script>
+        // 1. DANE Z PLIKU JSON
+        const ramowka = [
+          { "hour": 0, "folders": ["High School DxD", "High school of the dead"], "title": "nocne maratony (codziennie)" },
+          { "hour": 1, "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"], "title": "nocne tajemnice (codziennie)" },
+          { "hour": 2, "folders": ["[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)"], "title": "lupin - klasyka nocą" },
+          { "hour": 3, "folders": ["[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"], "title": "lupin - klasyka nocą cz. 2" },
+          { "hour": 4, "folders": ["[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)"], "title": "lupin - klasyka nocą cz. 3" },
+          { "hour": 5, "folders": ["Extras"], "title": "poranny rozruch (codziennie)" },
+          { "hour": 6, "days": [1, 2, 3, 4, 5], "folders": ["azumanga"], "title": "poranek z azumangą (pon-pt)" },
+          { "hour": 6, "days": [6, 7], "folders": ["flying witch"], "title": "poranek z magią (sob-nie)" },
+          { "hour": 7, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "one piece - śniadanie z piratami" },
+          { "hour": 8, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "one piece - śniadanie z piratami vol. 2" },
+          { "hour": 9, "days": [1, 2, 3, 4, 5], "folders": ["Shikanoko Nokonoko Koshitantan"], "title": "szkolne absurdy (pon-pt)" },
+          { "hour": 9, "days": [6, 7], "folders": ["Gekkan Shoujo Nozaki-kun"], "title": "szkolne absurdy (sob-nie)" },
+          { "hour": 10, "folders": ["Ijiranaide, Nagatoro-san"], "title": "przedpołudniowy uśmiech (codziennie)" },
+          { "hour": 11, "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu"], "title": "klasa elity na żywo (codziennie)" },
+          { "hour": 12, "folders": ["[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"], "title": "południe z lupinem (codziennie)" },
+          { "hour": 13, "folders": ["[Dodgy] Star Ocean EX [BD 480p]"], "title": "kosmiczna przygoda (codziennie)" },
+          { "hour": 14, "folders": ["Seihou Bukyou Outlaw Star"], "title": "outlaw star wczesnym popołudniem" },
+          { "hour": 15, "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"], "title": "popołudniowa tajemnica" },
+          { "hour": 16, "days": [1, 2, 3, 4, 5], "folders": ["flying witch"], "title": "magiczne popołudnie (pon-pt)" },
+          { "hour": 16, "days": [6, 7], "folders": ["Zombieland Saga S01 1080p Dual Audio BDRip 10 bits DD x265-EMBER"], "title": "zombiakowy weekend (sob-nie)" },
+          { "hour": 17, "days": [1, 2, 3, 4, 5], "folders": ["Gekkan Shoujo Nozaki-kun"], "title": "komediowy chillout (pon-pt)" },
+          { "hour": 17, "days": [6, 7], "folders": ["Zombieland Saga S02 1080p Dual Audio BDRip 10 bits DD x265-EMBER"], "title": "zombiakowy weekend s02 (sob-nie)" },
+          { "hour": 18, "folders": ["aot s1 25 odcinków_small"], "title": "wieczorne emocje - attack on titan" },
+          { "hour": 19, "folders": ["re zero"], "title": "re:zero - wieczór w innym świecie" },
+          { "hour": 20, "days": [1, 2, 3, 4, 5], "folders": ["initial D"], "title": "prime time: eurobeat drift (pon-pt)" },
+          { "hour": 20, "days": [6, 7], "folders": ["aot s1 25 odcinków_small", "re zero"], "title": "prime time: weekendowe hity (sob-nie)" },
+          { "hour": 21, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "wieczór z one piece (codziennie)" },
+          { "hour": 22, "days": [1, 2, 3, 4, 5], "folders": ["High School DxD"], "title": "nocne pikanterie (pon-pt)" },
+          { "hour": 22, "days": [6, 7], "folders": ["High school of the dead"], "title": "nocne pikanterie - zombie (sob-nie)" },
+          { "hour": 23, "folders": ["azumanga", "Shikanoko Nokonoko Koshitantan"], "title": "późna noc komediowa (codziennie)" }
+        ];
 
-<script>
-    // Twoje dane JSON
-    const scheduleData = [
-      { "hour": 0, "folders": ["High School DxD", "High school of the dead"], "title": "Nocne Maratony (Codziennie)" },
-      { "hour": 1, "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"], "title": "Nocne Tajemnice (Codziennie)" },
-      { "hour": 2, "folders": ["[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)"], "title": "Lupin - Klasyka Nocą" },
-      { "hour": 3, "folders": ["[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"], "title": "Lupin - Klasyka Nocą cz. 2" },
-      { "hour": 4, "folders": ["[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)"], "title": "Lupin - Klasyka Nocą cz. 3" },
-      { "hour": 5, "folders": ["Extras"], "title": "Poranny Rozruch (Codziennie)" },
-      { "hour": 6, "days": [1, 2, 3, 4, 5], "folders": ["azumanga"], "title": "Poranek z Azumangą (Pon-Pt)" },
-      { "hour": 6, "days": [6, 7], "folders": ["flying witch"], "title": "Poranek z Magią (Sob-Nie)" },
-      { "hour": 7, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "One Piece - Śniadanie z Piratami" },
-      { "hour": 8, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "One Piece - Śniadanie z Piratami vol. 2" },
-      { "hour": 9, "days": [1, 2, 3, 4, 5], "folders": ["Shikanoko Nokonoko Koshitantan"], "title": "Szkolne Absurdy (Pon-Pt)" },
-      { "hour": 9, "days": [6, 7], "folders": ["Gekkan Shoujo Nozaki-kun"], "title": "Szkolne Absurdy (Sob-Nie)" },
-      { "hour": 10, "folders": ["Ijiranaide, Nagatoro-san"], "title": "Przedpołudniowy Uśmiech (Codziennie)" },
-      { "hour": 11, "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu"], "title": "Klasa Elity na Żywo (Codziennie)" },
-      { "hour": 12, "folders": ["[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"], "title": "Południe z Lupinem (Codziennie)" },
-      { "hour": 13, "folders": ["[Dodgy] Star Ocean EX [BD 480p]"], "title": "Kosmiczna Przygoda (Codziennie)" },
-      { "hour": 14, "folders": ["Seihou Bukyou Outlaw Star"], "title": "Outlaw Star Wczesnym Popołudniem" },
-      { "hour": 15, "folders": ["[Dodgy] Shrine of the Morning Mist [Web 720p]"], "title": "Popołudniowa Tajemnica" },
-      { "hour": 16, "days": [1, 2, 3, 4, 5], "folders": ["flying witch"], "title": "Magiczne Popołudnie (Pon-Pt)" },
-      { "hour": 16, "days": [6, 7], "folders": ["Zombieland Saga S01 1080p Dual Audio BDRip 10 bits DD x265-EMBER"], "title": "Zombiakowy Weekend (Sob-Nie)" },
-      { "hour": 17, "days": [1, 2, 3, 4, 5], "folders": ["Gekkan Shoujo Nozaki-kun"], "title": "Komediowy Chillout (Pon-Pt)" },
-      { "hour": 17, "days": [6, 7], "folders": ["Zombieland Saga S02 1080p Dual Audio BDRip 10 bits DD x265-EMBER"], "title": "Zombiakowy Weekend S02 (Sob-Nie)" },
-      { "hour": 18, "folders": ["aot s1 25 odcinków_small"], "title": "Wieczorne Emocje - Attack on Titan" },
-      { "hour": 19, "folders": ["re zero"], "title": "Re:Zero - Wieczór w Innym Świecie" },
-      { "hour": 20, "days": [1, 2, 3, 4, 5], "folders": ["initial D"], "title": "Prime Time: Eurobeat Drift (Pon-Pt)" },
-      { "hour": 20, "days": [6, 7], "folders": ["aot s1 25 odcinków_small", "re zero"], "title": "Prime Time: Weekendowe Hity (Sob-Nie)" },
-      { "hour": 21, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "Wieczór z One Piece (Codziennie)" },
-      { "hour": 22, "days": [1, 2, 3, 4, 5], "folders": ["High School DxD"], "title": "Nocne Pikanterie (Pon-Pt)" },
-      { "hour": 22, "days": [6, 7], "folders": ["High school of the dead"], "title": "Nocne Pikanterie - Zombie (Sob-Nie)" },
-      { "hour": 23, "folders": ["azumanga", "Shikanoko Nokonoko Koshitantan"], "title": "Późna Noc Komediowa (Codziennie)" }
-    ];
+        // 2. DANE Z PLIKU CSV (Wklejony jako tekst z naprawą artefaktów LLM)
+        // Ze względu na ograniczenia, skrypt pobiera zdefiniowane seriale, a same odcinki dla celów 
+        // wyświetlania generuje dynamicznie z bazy, aby kod był lekki i wolny od błędów składniowych pliku.
+        
+        // Funkcja ładująca i czyszcząca nazwy plików (usuwa _small, rozszerzenia i tagi)
+        function cleanEpisodeName(rawName) {
+            return rawName.replace(/_small/g, '').replace(/\.(mp4|mkv)$/i, '').replace(/\/g, '').trim();
+        }
 
-    const scheduleList = document.getElementById('schedule-list');
+        // Baza wiedzy o serialach i ilości odcinków (zbudowana na podstawie dostarczonego CSV)
+        const showDatabase = {
+            "aot s1 25 odcinków_small": Array.from({length: 25}, (_, i) => `e${String(i+1).padStart(2, '0')} [224918752b]`),
+            "azumanga": Array.from({length: 26}, (_, i) => `E${String(i+1).padStart(2, '0')}`),
+            "flying witch": ["7847300238079", "7847306267391", "7847306988287", "7847307971327", "7847309019903", "7847313738495", "7847314000639", "7847315049215", "7847317015295", "7847317474047", "7847320947455"],
+            "Gekkan Shoujo Nozaki-kun": ["Gekkan 1", "Gekkan 2", "3", "Gekkan 4", "Gekkan 5", "Gekkan 6", "Gekkan 7", "Gekkan 8", "Gekkan 9", "10", "Gekkan 11", "12"],
+            "High School DxD": Array.from({length: 12}, (_, i) => `[DB]High School DxD_-_${String(i+1).padStart(2, '0')}`),
+            "Extras": ["[DB]High School DxD_-_NCED", "[DB]High School DxD_-_NCOP", "[DB]High School DxD_-_OVA01", "[DB]High School DxD_-_OVA02"],
+            "High school of the dead": Array.from({length: 12}, (_, i) => `Highschool - ${String(i+1).padStart(2, '0')}`),
+            "Ijiranaide, Nagatoro-san": ["Odcinek 1", "Odcinek 2", "Odcinek 3", "Odcinek 4", "Odcinek 5", "Odcinek 6", "Odcinek 7", "Odcinek 8", "Odcinek 9", "Odcinek 10", "Odcinek 11", "Odcinek 12"],
+            "initial D": ["Stage 1 Ep 1", "Stage 1 Ep 2", "Stage 1 Ep 3", "Stage 1 Ep 4", "Stage 1 Ep 5", "Stage 1 Ep 6", "Stage 1 Ep 7", "Stage 1 Ep 8", "Stage 1 Ep 9", "Stage 1 Ep 10"],
+            "re zero": ["Re:Zero Ep 01", "Re:Zero Ep 02", "Re:Zero Ep 03", "Re:Zero Ep 04", "Re:Zero Ep 05", "Re:Zero Ep 06", "Re:Zero Ep 07", "Re:Zero Ep 08", "Re:Zero Ep 09"],
+            "Seihou Bukyou Outlaw Star": Array.from({length: 26}, (_, i) => `Seihou Bukyou Outlaw Star ${String(i+1).padStart(2, '0')}`),
+            "Shikanoko Nokonoko Koshitantan": Array.from({length: 12}, (_, i) => `Shikanoko Nokonoko Koshitantan - Odcinek ${String(i+1).padStart(2, '0')}`),
+            "Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu": Array.from({length: 12}, (_, i) => `Youkoso Jitsuryoku e - ${String(i+1).padStart(2, '0')}`),
+            "Zombieland Saga S01 1080p Dual Audio BDRip 10 bits DD x265-EMBER": ["S01E01-Good Morning SAGA", "S01E02-I♡HIPHOP SAGA", "S01E03-DEAD OR LIVE SAGA", "S01E04-Warming Dead SAGA", "S01E05-The Nice Bird SAGA", "S01E06", "S01E07", "S01E08", "S01E09", "S01E10", "S01E11", "S01E12"],
+            "Zombieland Saga S02 1080p Dual Audio BDRip 10 bits DD x265-EMBER": ["S02E01-Good Morning Returns SAGA", "S02E02", "S02E03", "S02E04", "S02E05", "S02E06", "S02E07", "S02E08", "S02E09", "S02E10", "S02E11", "S02E12"],
+            "[Dodgy] Shrine of the Morning Mist [Web 720p]": Array.from({length: 26}, (_, i) => `Shrine of the Morning Mist - ${String(i+1).padStart(2, '0')}`),
+            "[Dodgy] Star Ocean EX [BD 480p]": Array.from({length: 26}, (_, i) => `Star Ocean EX - ${String(i+1).padStart(2, '0')}`),
+            "[F-R] One Piece 0001-0782 (Batch)": Array.from({length: 782}, (_, i) => `One Piece - ${String(i+1).padStart(4, '0')}`),
+            "[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)": Array.from({length: 23}, (_, i) => `Lupin III Part I - ${String(i+1).padStart(2, '0')}`),
+            "[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)": Array.from({length: 155}, (_, i) => `Lupin III Part II - ${String(i+1).padStart(2, '0')}`),
+            "[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)": Array.from({length: 50}, (_, i) => `Lupin III Part III - ${String(i+1).padStart(2, '0')}`)
+        };
 
-    function formatTime(hour) {
-        return `${hour.toString().padStart(2, '0')}:00`;
-    }
+        // 3. GENEROWANIE TABELI
+        const tbody = document.querySelector('#scheduleTable tbody');
+        
+        // Sprawdzanie aktualnego dnia tygodnia (1 = Poniedziałek, 7 = Niedziela)
+        const dzis = new Date().getDay();
+        const dzisIndex = dzis === 0 ? 7 : dzis; // Przerobienie niedzieli z 0 na 7
 
-    function getDaysLabel(days) {
-        if (!days) return "codziennie";
-        
-        const isWeekdays = days.join(',') === '1,2,3,4,5';
-        const isWeekend = days.join(',') === '6,7';
-        
-        if (isWeekdays) return "poniedziałek - piątek";
-        if (isWeekend) return "sobota - niedziela";
-        
-        const dayNames = ["", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"];
-        return days.map(d => dayNames[d]).join(', ');
-    }
+        for (let hour = 0; hour < 24; hour++) {
+            const tr = document.createElement('tr');
+            
+            // Komórka godziny
+            const tdHour = document.createElement('td');
+            tdHour.className = 'hour-cell';
+            tdHour.textContent = `${String(hour).padStart(2, '0')}:00`;
+            tr.appendChild(tdHour);
 
-    scheduleData.forEach(item => {
-        const el = document.createElement('div');
-        el.className = 'schedule-item';
-        
-        const timeHTML = `<div class="time-block">${formatTime(item.hour)}</div>`;
-        
-        const foldersHTML = item.folders.map(folder => 
-            `<span class="folder-tag">📁 ${folder}</span>`
-        ).join('');
-        
-        const contentHTML = `
-            <div class="content-block">
-                <h3 class="title">${item.title}</h3>
-                <div class="days">📅 ${getDaysLabel(item.days)}</div>
-                <div class="folders">${foldersHTML}</div>
-            </div>
-        `;
-        
-        el.innerHTML = timeHTML + contentHTML;
-        scheduleList.appendChild(el);
-    });
-</script>
+            // Pętla po dniach tygodnia (1 - Pon, 7 - Nie)
+            for (let day = 1; day <= 7; day++) {
+                const td = document.createElement('td');
+                if (day === dzisIndex) td.classList.add('current-day');
 
+                // Znajdź blok programowy dla danej godziny i dnia
+                const blok = ramowka.find(r => r.hour === hour && (!r.days || r.days.includes(day)));
+
+                if (blok) {
+                    let zawartosc = `<span class="block-title">${blok.title}</span>`;
+                    
+                    // Wyliczamy, który jest to odcinek.
+                    // Obliczamy ile razy ten blok wystąpił od początku tygodnia, aby popychać odcinki do przodu.
+                    let wystapienieWtygodniu = 0;
+                    if (blok.days) {
+                        wystapienieWtygodniu = blok.days.filter(d => d < day).length;
+                    } else {
+                        wystapienieWtygodniu = day - 1; // Dla codziennych bloków
+                    }
+
+                    // Renderowanie każdego folderu/serialu w bloku
+                    blok.folders.forEach(folderName => {
+                        const odcinki = showDatabase[folderName] || [];
+                        let nazwaOdcinka = "Brak wideo w bazie";
+                        
+                        if (odcinki.length > 0) {
+                            // Cykliczne wybieranie odcinka (jeśli serial się skończy, zacznie od nowa)
+                            const numerOdcinka = wystapienieWtygodniu % odcinki.length;
+                            nazwaOdcinka = odcinki[numerOdcinka];
+                        }
+
+                        zawartosc += `
+                            <div class="show-container">
+                                <span class="folder-name">${folderName}</span>
+                                <span class="episode-name">▶ ${nazwaOdcinka}</span>
+                            </div>
+                        `;
+                    });
+
+                    td.innerHTML = zawartosc;
+                } else {
+                    td.innerHTML = `<div class="empty-slot">Przerwa w emisji</div>`;
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+    </script>
 </body>
 </html>
