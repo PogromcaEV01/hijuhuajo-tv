@@ -1,671 +1,157 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Heisenberg TV 😏</title>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <style>
-    body {
-      margin: 0;
-      background: radial-gradient(circle at center, #2a2a2a 0%, #000000 100%);
-      height: 100vh;
-      height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    .tv-container {
-      background: #111;
-      padding: 16px;
-      border-radius: 20px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 0 2px #333;
-    }
-
-    .tv-screen {
-      position: relative;
-      width: 70vw;
-      max-width: 1225px;
-      aspect-ratio: 16 / 9;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: inset 0 0 20px rgba(0,0,0,1);
-      cursor: default;
-    }
-
-    .tv-screen.hide-cursor {
-      cursor: none;
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain; 
-      display: block;
-    }
-
-    #info {
-      position: absolute;
-      top: 15px; 
-      left: 15px;
-      color: white;
-      font-size: 16px;
-      z-index: 10;
-      background: rgba(0, 0, 0, 0.75);
-      padding: 8px 12px;
-      border-radius: 6px;
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: opacity 0.3s ease;
-    }
-
-    #info.hidden-info {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #custom-controls {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-      display: flex;
-      align-items: center;
-      padding: 10px 15px 8px 15px;
-      box-sizing: border-box;
-      color: white;
-      transition: opacity 0.8s ease;
-      opacity: 0; 
-      z-index: 20;
-    }
-
-    #custom-controls.active {
-      opacity: 1;
-    }
-
-    .ctrl-icon {
-      fill: #ffffff;
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      transition: fill 0.2s, opacity 0.2s;
-      margin: 0 8px;
-    }
-
-    .ctrl-icon:hover {
-      fill: #00ffcc;
-    }
-
-    .vol-wrapper {
-      display: flex;
-      align-items: center;
-    }
-
-    .slider-container {
-      width: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: width 0.3s ease, opacity 0.3s ease;
-      display: flex;
-      align-items: center;
-    }
-
-    .vol-wrapper:hover .slider-container {
-      width: 65px;
-      opacity: 1;
-    }
-
-    #volume-slider {
-      width: 55px;
-      cursor: pointer;
-      margin-left: 5px;
-    }
-
-    #progress-container {
-      flex-grow: 1;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.3);
-      margin: 0 15px;
-      position: relative;
-      pointer-events: none; 
-    }
-
-    #progress-bar {
-      height: 100%;
-      background: #ffffff;
-      width: 0%;
-      position: relative;
-    }
-
-    #progress-thumb {
-      width: 10px;
-      height: 10px;
-      background: #ffffff;
-      border-radius: 50%;
-      position: absolute;
-      right: -5px;
-      top: -3px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.5);
-    }
-
-    #time-display {
-      font-size: 12px;
-      font-family: sans-serif;
-      font-weight: normal;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      margin-right: 12px;
-    }
-
-    .menu-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    #settings-menu {
-      position: absolute;
-      bottom: 35px;
-      right: 0; 
-      background: rgba(20, 20, 20, 0.9);
-      border-radius: 6px;
-      padding: 5px 0;
-      display: none;
-      flex-direction: column;
-      min-width: 150px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(4px);
-    }
-
-    #settings-menu.show {
-      display: flex;
-    }
-
-    .menu-item {
-      padding: 10px 15px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-
-    .menu-item:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #00ffcc;
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="tv-container">
-  <div class="tv-screen" id="tv-screen">
-    <video id="player" autoplay muted></video>
-    <div id="info">Inicjalizacja systemu...</div>
-
-    <div id="custom-controls">
-      
-      <div class="vol-wrapper">
-        <svg id="btn-mute" class="ctrl-icon" viewBox="0 0 24 24">
-          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-        </svg>
-        <div class="slider-container">
-          <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1">
-        </div>
-      </div>
-
-      <div id="progress-container">
-        <div id="progress-bar">
-          <div id="progress-thumb"></div>
-        </div>
-      </div>
-
-      <span id="time-display">-0:00</span>
-
-      <svg id="btn-fullscreen" class="ctrl-icon" viewBox="0 0 24 24">
-        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-      </svg>
-
-      <div class="menu-wrapper">
-        <svg id="btn-menu" class="ctrl-icon" viewBox="0 0 24 24">
-          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-        </svg>
-        <div id="settings-menu">
-          <div class="menu-item" id="btn-schedule">ramówka</div>
-          <div class="menu-item" id="btn-pip">obraz w obrazie</div>
-          <div class="menu-item" id="btn-toggle-info">ukryj informacje</div>
-          <div class="menu-item" id="btn-mobile-fullscreen" style="display: none;">pełny ekran</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<script>
-let scheduleConfig = [];
-let videosDB = {}; 
-const ambientFile = "https://aelwyd.space/ambient.mp4";
-let currentIsAmbient = false;
-
-// --- DOM elements ---
-const video = document.getElementById("player");
-const progressBar = document.getElementById("progress-bar");
-const timeDisplay = document.getElementById("time-display");
-const btnMute = document.getElementById("btn-mute");
-const volumeSlider = document.getElementById("volume-slider");
-const btnFullscreen = document.getElementById("btn-fullscreen");
-const tvScreen = document.getElementById("tv-screen");
-const customControls = document.getElementById("custom-controls");
-const infoDiv = document.getElementById("info");
-
-const btnMenu = document.getElementById("btn-menu");
-const settingsMenu = document.getElementById("settings-menu");
-const btnSchedule = document.getElementById("btn-schedule");
-const btnPip = document.getElementById("btn-pip");
-const btnToggleInfo = document.getElementById("btn-toggle-info");
-const btnMobileFullscreen = document.getElementById("btn-mobile-fullscreen");
-
-// --- LOGIKA ZANIKANIA PASKA (AUTO-HIDE) ---
-let activityTimeout;
-let isHoveringControls = false;
-
-customControls.addEventListener("mouseenter", () => isHoveringControls = true);
-customControls.addEventListener("mouseleave", () => isHoveringControls = false);
-
-function resetActivityTimer() {
-  tvScreen.classList.remove("hide-cursor");
-  customControls.classList.add("active");
-  clearTimeout(activityTimeout);
-  activityTimeout = setTimeout(() => {
-    if (!isHoveringControls) {
-      tvScreen.classList.add("hide-cursor");
-      customControls.classList.remove("active");
-      settingsMenu.classList.remove("show"); 
-    }
-  }, 2000);
-}
-
-tvScreen.addEventListener("mousemove", resetActivityTimer);
-tvScreen.addEventListener("click", resetActivityTimer);
-tvScreen.addEventListener("mouseleave", () => {
-  clearTimeout(activityTimeout);
-  tvScreen.classList.remove("hide-cursor");
-  customControls.classList.remove("active");
-  settingsMenu.classList.remove("show");
-});
-
-// --- LOGIKA WŁASNEGO ODTWARZACZA ---
-video.addEventListener("pause", () => {
-    video.play().catch(() => {});
-});
-
-function formatTimeRemaining(currentTime, duration) {
-  if (isNaN(duration) || isNaN(currentTime)) return "-0:00";
-  const remaining = Math.max(0, duration - currentTime);
-  const m = Math.floor(remaining / 60);
-  const s = Math.floor(remaining % 60);
-  return `-${m}:${s.toString().padStart(2, '0')}`;
-}
-
-video.addEventListener("timeupdate", () => {
-  if (video.duration) {
-    const percent = (video.currentTime / video.duration) * 100;
-    progressBar.style.width = `${percent}%`;
-    timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
+[
+  {
+    "hour": 0,
+    "folders": ["Cyberpunk Edgerunners [Tenrai-Sensei]", "1a. OVA - B.C. 2033 (1987-91)"],
+    "title": "nocny cyberpunk i sci-fi (codziennie)"
+  },
+  {
+    "hour": 1,
+    "folders": ["1c. Series - B.C. TOKYO 2040 (1998-99)", "Iria Zeiram [sxales]"],
+    "title": "nocne tajemnice i mrok (codziennie)"
+  },
+  {
+    "hour": 2,
+    "folders": ["[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)", "[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"],
+    "title": "lupin - klasyka nocą"
+  },
+  {
+    "hour": 3,
+    "folders": ["Terror in Resonance [Tenrai-Sensei]", "Link Click season 1"],
+    "title": "nocne thrillery"
+  },
+  {
+    "hour": 4,
+    "folders": ["Link Click season 2", "2a. OVA - A.D. Police Files (1990)"],
+    "title": "kryminał i akcja"
+  },
+  {
+    "hour": 5,
+    "folders": ["filmy"],
+    "title": "poranne kino (codziennie)"
+  },
+  {
+    "hour": 6,
+    "days": [1, 2, 3, 4, 5],
+    "folders": ["Shikanoko Nokonoko Koshitantan", "grand blue s1"],
+    "title": "poranek z komedią (pon-pt)"
+  },
+  {
+    "hour": 6,
+    "days": [6, 7],
+    "folders": ["flying witch", "Delicious in Dungeon [Tenrai-Sensei]"],
+    "title": "poranek z magią i gotowaniem (sob-nie)"
+  },
+  {
+    "hour": 7,
+    "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
+    "title": "one piece - śniadanie z piratami"
+  },
+  {
+    "hour": 8,
+    "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
+    "title": "one piece - śniadanie z piratami vol. 2"
+  },
+  {
+    "hour": 9,
+    "days": [1, 2, 3, 4, 5],
+    "folders": ["Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]", "Blue Box [Tenrai-Sensei]"],
+    "title": "szkolne perypetie i romanse (pon-pt)"
+  },
+  {
+    "hour": 9,
+    "days": [6, 7],
+    "folders": ["Gekkan Shoujo Nozaki-kun", "Arte [Tenrai-Sensei]"],
+    "title": "sztuka i absurdy (sob-nie)"
+  },
+  {
+    "hour": 10,
+    "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu", "Wistoria - Wand and Sword [Tenrai-Sensei]"],
+    "title": "klasa elity i magia (codziennie)"
+  },
+  {
+    "hour": 11,
+    "folders": ["[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)"],
+    "title": "przedpołudnie z lupinem"
+  },
+  {
+    "hour": 12,
+    "folders": ["Frieren꞉ Beyond Journey's End [Tenrai-Sensei]", "Delicious in Dungeon [Tenrai-Sensei]"],
+    "title": "wyprawa w nieznane (codziennie)"
+  },
+  {
+    "hour": 13,
+    "folders": ["Chillin' In My 30S... [Tenrai-Sensei]", "The Wrong Way To Use Healing Magic [Tenrai-Sensei]"],
+    "title": "isekaiowe popołudnie (codziennie)"
+  },
+  {
+    "hour": 14,
+    "folders": ["Demon Lord 2099 [Tenrai-Sensei]", "Wistoria - Wand and Sword [Tenrai-Sensei]"],
+    "title": "magia i technologia"
+  },
+  {
+    "hour": 15,
+    "folders": ["grand blue s1", "Gekkan Shoujo Nozaki-kun"],
+    "title": "popołudniowy chillout"
+  },
+  {
+    "hour": 16,
+    "days": [1, 2, 3, 4, 5],
+    "folders": ["flying witch", "Arte [Tenrai-Sensei]"],
+    "title": "spokojne popołudnie (pon-pt)"
+  },
+  {
+    "hour": 16,
+    "days": [6, 7],
+    "folders": ["Zombieland Saga S01 EMBER", "Zombieland Saga S02 EMBER"],
+    "title": "zombiakowy weekend (sob-nie)"
+  },
+  {
+    "hour": 17,
+    "folders": ["Shikanoko Nokonoko Koshitantan", "Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]"],
+    "title": "popołudniowy uśmiech (codziennie)"
+  },
+  {
+    "hour": 18,
+    "folders": ["aot s1 25 odcinków_small", "re zero"],
+    "title": "wieczorne emocje - tytani i magia"
+  },
+  {
+    "hour": 19,
+    "folders": ["re zero", "Frieren꞉ Beyond Journey's End [Tenrai-Sensei]"],
+    "title": "wieczór w innym świecie"
+  },
+  {
+    "hour": 20,
+    "days": [1, 2, 3, 4, 5],
+    "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
+    "title": "prime time: piraci (pon-pt)"
+  },
+  {
+    "hour": 20,
+    "days": [6, 7],
+    "folders": ["aot s1 25 odcinków_small", "Cyberpunk Edgerunners [Tenrai-Sensei]"],
+    "title": "prime time: weekendowe hity (sob-nie)"
+  },
+  {
+    "hour": 21,
+    "folders": ["[F-R] One Piece 0001-0782 (Batch)"],
+    "title": "wieczór z one piece (codziennie)"
+  },
+  {
+    "hour": 22,
+    "days": [1, 2, 3, 4, 5],
+    "folders": ["Gushing Over Magical Girls [Tenrai-Sensei]", "High school of the dead"],
+    "title": "nocne pikanterie (pon-pt)"
+  },
+  {
+    "hour": 22,
+    "days": [6, 7],
+    "folders": ["High school of the dead", "Terror in Resonance [Tenrai-Sensei]"],
+    "title": "nocne zombie i akcja (sob-nie)"
+  },
+  {
+    "hour": 23,
+    "folders": ["Blue Box [Tenrai-Sensei]", "Link Click season 1"],
+    "title": "późna noc komediowo-tajemnicza (codziennie)"
   }
-});
-
-btnMute.addEventListener("click", () => {
-  video.muted = !video.muted;
-  btnMute.style.opacity = video.muted ? "0.5" : "1";
-  volumeSlider.value = video.muted ? 0 : video.volume;
-});
-
-volumeSlider.addEventListener("input", (e) => {
-  video.volume = e.target.value;
-  if (video.volume > 0) {
-    video.muted = false;
-    btnMute.style.opacity = "1";
-  } else {
-    video.muted = true;
-    btnMute.style.opacity = "0.5";
-  }
-});
-
-btnMenu.addEventListener("click", (e) => {
-  e.stopPropagation(); 
-  settingsMenu.classList.toggle("show");
-});
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".menu-wrapper")) {
-    settingsMenu.classList.remove("show");
-  }
-});
-
-btnSchedule.addEventListener("click", () => window.location.href = "ramowka.html");
-
-btnPip.addEventListener("click", async () => {
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-    } else if (document.pictureInPictureEnabled) {
-      await video.requestPictureInPicture();
-    }
-  } catch (err) {
-    console.error("Błąd Picture-in-Picture: ", err);
-  }
-  settingsMenu.classList.remove("show");
-});
-
-btnToggleInfo.addEventListener("click", () => {
-  infoDiv.classList.toggle("hidden-info");
-  btnToggleInfo.innerText = infoDiv.classList.contains("hidden-info") ? "pokaż informacje" : "ukryj informacje";
-  settingsMenu.classList.remove("show");
-});
-
-const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-if (isMobileDevice) {
-  btnMobileFullscreen.style.display = "block";
-}
-
-btnMobileFullscreen.addEventListener("click", () => {
-  if (!document.fullscreenElement) {
-    tvScreen.requestFullscreen().catch(err => console.error(err.message));
-  } else {
-    document.exitFullscreen();
-  }
-  settingsMenu.classList.remove("show"); 
-});
-
-document.addEventListener("fullscreenchange", () => {
-  btnMobileFullscreen.innerText = document.fullscreenElement ? "W ramce" : "Pełny ekran";
-});
-
-btnFullscreen.addEventListener("click", () => {
-  if (!document.fullscreenElement) {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const elementToFullscreen = isMobile ? document.documentElement : tvScreen;
-    elementToFullscreen.requestFullscreen().catch(err => console.error(err.message));
-  } else {
-    document.exitFullscreen();
-  }
-});
-
-video.addEventListener("loadedmetadata", () => {
-  timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
-});
-
-// --- LOGIKA RAMÓWKI TV Z SYMULACJĄ (EFEKT DOMINA) ---
-
-function getCycleDay() {
-  const now = new Date();
-  const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
-  return (Math.floor(localEpochMs / 86400000) % 182) + 1;
-}
-
-async function loadCSV() {
-  const res = await fetch("anime_lista.csv");
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  const db = {};
-
-  for(let i = 0; i < lines.length; i++) {
-    const row = lines[i];
-    if (!row.includes('";"')) continue;
-    const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
-    if (cols.length < 4) continue;
-
-    const fullPath = cols[0];
-    const fileName = cols[1];
-    const ext = cols[2];
-    const durationStr = cols[3]; 
-
-    let durParts = durationStr.split(':').map(Number);
-    let durSec = 0;
-    if (durParts.length === 3) {
-      durSec = durParts[0] * 3600 + durParts[1] * 60 + durParts[2];
-    } else if (durParts.length === 2) {
-      durSec = durParts[0] * 60 + durParts[1];
-    }
-
-    const pathParts = fullPath.split(/\\|\//);
-    const folderName = pathParts[pathParts.length - 1];
-
-    if (!db[folderName]) db[folderName] = [];
-    db[folderName].push({
-      file: fileName + ext,
-      fullPath: fullPath, // ZAPISUJEMY ORYGINALNĄ PEŁNĄ ŚCIEŻKĘ
-      durationSec: durSec || 1440 
-    });
-  }
-  return db;
-}
-
-async function startTV() {
-  try {
-    const res = await fetch("ramowka.json");
-    scheduleConfig = await res.json();
-    document.getElementById("info").innerText = "Pobieranie bazy wideo...";
-    videosDB = await loadCSV();
-  } catch (e) {
-    document.getElementById("info").innerText = "BŁĄD ŁADOWANIA DANYCH 💀";
-    console.error(e);
-    return;
-  }
-  sync();
-  setInterval(sync, 5000);
-}
-
-function getBlockEnd(startTimeSec, durationSec) {
-  const endTimeSec = startTimeSec + durationSec;
-  const startHour = Math.floor(startTimeSec / 3600);
-  const endHour = Math.floor((endTimeSec - 1) / 3600); 
-
-  if (endHour > startHour) {
-    return (endHour + 1) * 3600;
-  } else {
-    const halfHourSec = startHour * 3600 + 1800;
-    if (startTimeSec < halfHourSec && endTimeSec <= halfHourSec) {
-      return halfHourSec;
-    } else {
-      return (startHour + 1) * 3600;
-    }
-  }
-}
-
-function simulateUpTo(target_t, currentCycleDay) {
-  let t = 0; 
-  let series_state = {};
-  for(let f in videosDB) {
-    series_state[f] = { next_ep_idx: 0, finished: false };
-  }
-
-  let current_playback = null;
-  const max_t = currentCycleDay * 86400; 
-
-  while (t <= target_t && t < max_t) {
-    let day = Math.floor(t / 86400) + 1;
-    let hour = Math.floor((t % 86400) / 3600);
-    let dow = ((day - 1) % 7) + 1;
-
-    let configConfigs = scheduleConfig.filter(x => x.hour === hour);
-    let config = configConfigs.find(x => !x.days || x.days.includes(dow)) || configConfigs[0];
-
-    if (!config) {
-      let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-      if (target_t >= t && target_t < next_hour_t) {
-        current_playback = { type: 'ambient', offsetSec: target_t - t };
-      }
-      t = next_hour_t;
-      continue;
-    }
-
-    let folders = config.folders || [config.folder];
-    let valid_folders = folders.filter(f => videosDB[f] && videosDB[f].length > 0);
-
-    if (valid_folders.length === 0) {
-      let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-      if (target_t >= t && target_t < next_hour_t) {
-        current_playback = { type: 'ambient', offsetSec: target_t - t };
-      }
-      t = next_hour_t;
-      continue;
-    }
-
-    let active_folder = null;
-    for (let f of valid_folders) {
-      if (!series_state[f]) series_state[f] = { next_ep_idx: 0, finished: false };
-      if (!series_state[f].finished) {
-        active_folder = f;
-        break;
-      }
-    }
-
-    if (!active_folder) {
-      for (let f of valid_folders) {
-        series_state[f].next_ep_idx = 0;
-        series_state[f].finished = false;
-      }
-      active_folder = valid_folders[0];
-    }
-
-    let advanced_t = t;
-    let f = active_folder;
-    let db = videosDB[f];
-    let total_eps = db.length;
-    let state = series_state[f];
-    let eps_to_play = [];
-
-    if (total_eps === 1) {
-      eps_to_play.push( { type: 'premiere', idx: 0 } );
-      state.finished = true;
-    } else {
-      if (state.next_ep_idx === 0) {
-        eps_to_play.push( { type: 'premiere', idx: 0 } );
-        state.next_ep_idx++;
-      } else if (state.next_ep_idx < total_eps) {
-        eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
-        eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx } );
-        state.next_ep_idx++;
-      } else if (state.next_ep_idx === total_eps) {
-        eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
-        state.finished = true;
-      }
-    }
-
-    for (let ep of eps_to_play) {
-      let ep_info = db[ep.idx];
-      let duration = ep_info.durationSec;
-      let start_t = advanced_t;
-      let end_t = start_t + duration;
-      let block_end_t = getBlockEnd(start_t, duration);
-
-      if (target_t >= start_t && target_t < block_end_t) {
-        if (target_t < end_t) {
-          current_playback = {
-            type: 'video', folder: f, file: ep_info.file,
-            fullPath: ep_info.fullPath, // PRZEKAZUJEMY PEŁNĄ ŚCIEŻKĘ DO ODTWARZANIA
-            episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
-            duration: duration, offsetSec: target_t - start_t,
-            configTitle: config.title || f
-          };
-        } else {
-          current_playback = { type: 'ambient', offsetSec: target_t - end_t };
-        }
-      }
-      advanced_t = block_end_t;
-    }
-
-    if (advanced_t > t) {
-      t = advanced_t; 
-    } else {
-      t = Math.floor(t / 3600) * 3600 + 3600; 
-    }
-  }
-  return current_playback;
-}
-
-function playAmbient(ambientOffsetSec = 0) {
-  if (currentIsAmbient) return;
-  
-  currentIsAmbient = true;
-  video.src = ambientFile;
-  video.loop = true;
-  video.dataset.slotId = "ambient";
-  video.load();
-  
-  video.onloadedmetadata = () => {
-    video.currentTime = ambientOffsetSec % (video.duration || 1);
-    video.play().catch(() => {});
-  };
-}
-
-function sync() {
-  const now = new Date();
-  const cycleDay = getCycleDay();
-  
-  const h = now.getHours();
-  const m = now.getMinutes();
-  const s = now.getSeconds();
-  
-  const target_t = (cycleDay - 1) * 86400 + h * 3600 + m * 60 + s;
-  const playback = simulateUpTo(target_t, cycleDay);
-
-  if (!playback) {
-    document.getElementById("info").innerText = "Brak programu do wyświetlenia.";
-    return;
-  }
-
-  const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-
-  if (playback.type === 'video') {
-    // BUDUJEMY URL NA BAZIE PEŁNEJ ŚCIEŻKI Z PLIKU CSV
-    const encodedPath = playback.fullPath.split(/\\|\//).map(encodeURIComponent).join('/');
-    const videoUrl = `https://aelwyd.space/${encodedPath}/${encodeURIComponent(playback.file)}`;
-    
-    const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
-
-    if (video.dataset.slotId !== slotId) {
-      video.dataset.slotId = slotId;
-      video.src = videoUrl;
-      currentIsAmbient = false;
-      video.load();
-
-      video.onloadedmetadata = () => {
-        video.dataset.epDuration = playback.duration;
-        video.currentTime = playback.offsetSec;
-        video.play().catch(() => {});
-      };
-
-      video.onended = () => {
-        if (!currentIsAmbient) playAmbient();
-      };
-    } else {
-      if (!currentIsAmbient && video.readyState >= 1) {
-        if (playback.offsetSec >= playback.duration) {
-          playAmbient();
-        }
-      }
-    }
-
-    const typeLabel = playback.isRerun ? 'powtórka' : 'nowy';
-    document.getElementById("info").innerText =
-      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.configTitle} | odc. ${playback.episodeIndex} (${typeLabel})`;
-
-  } else if (playback.type === 'ambient') {
-    playAmbient(playback.offsetSec);
-    document.getElementById("info").innerText =
-      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} | Przerwa`;
-  }
-}
-
-startTV();
-</script>
-</body>
-</html>
+]
