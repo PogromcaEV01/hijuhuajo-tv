@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -11,6 +10,7 @@
             --card-bg: #1e1e1e;
             --text-main: #e0e0e0;
             --accent: #bb86fc;
+            --accent-hover: #9c4dff;
         }
         
         body {
@@ -56,9 +56,42 @@
             text-align: center;
             color: var(--accent);
             margin-top: 60px;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 2px;
+        }
+
+        /* Sekcja wyboru daty */
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .controls label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: var(--accent);
+        }
+
+        .controls input[type="date"] {
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--accent);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .controls input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8) sepia(1) hue-rotate(200deg) saturate(5);
+            cursor: pointer;
         }
         
         .schedule-item {
@@ -100,34 +133,45 @@
         .title {
             font-size: 1.2rem;
             font-weight: bold;
-            margin: 0 0 8px 0;
+            margin: 0 0 12px 0;
             color: #ffffff;
-        }
-        
-        .days {
-            font-size: 0.85rem;
-            color: var(--accent);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
         
         .folders {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ep-info {
+            background-color: #252525;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 3px solid #444;
+            word-break: break-all; 
         }
         
         .folder-tag {
-            background-color: #2c2c2c;
-            color: #cfcfcf;
-            padding: 5px 12px;
-            border-radius: 15px;
+            color: var(--accent);
             font-size: 0.85rem;
-            border: 1px solid #444;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .ep-name {
+            color: #cfcfcf;
+            font-size: 0.95rem;
+            display: block;
+            margin-left: 10px;
+            margin-bottom: 4px;
+        }
+
+        .ep-name::before {
+            content: "▶ ";
+            color: var(--accent);
+            font-size: 0.8rem;
         }
 
         @media (max-width: 500px) {
@@ -138,6 +182,11 @@
             h1 {
                 margin-top: 50px;
                 font-size: 1.5rem;
+            }
+            .time-block {
+                min-width: 60px;
+                font-size: 1.2rem;
+                padding: 15px;
             }
         }
     </style>
@@ -154,80 +203,205 @@
 
 <div class="schedule-container">
     <h1>📺 ramówka transmisji</h1>
+    
+    <div class="controls">
+        <label for="schedule-date">Wybierz dzień emisji:</label>
+        <input type="date" id="schedule-date" min="2026-05-01">
+    </div>
+
     <div id="schedule-list"></div>
 </div>
 
 <script>
-    // Zaktualizowane dane JSON[cite: 2]
-    const scheduleData = [
-      { "hour": 0, "folders": ["Cyberpunk Edgerunners [Tenrai-Sensei]", "1a. OVA - B.C. 2033 (1987-91)"], "title": "nocny cyberpunk i sci-fi (codziennie)" },
-      { "hour": 1, "folders": ["1c. Series - B.C. TOKYO 2040 (1998-99)", "Iria Zeiram [sxales]"], "title": "nocne tajemnice i mrok (codziennie)" },
-      { "hour": 2, "folders": ["[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)", "[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"], "title": "lupin - klasyka nocą" },
-      { "hour": 3, "folders": ["Terror in Resonance [Tenrai-Sensei]", "Link Click season 1"], "title": "nocne thrillery" },
-      { "hour": 4, "folders": ["Link Click season 2", "2a. OVA - A.D. Police Files (1990)"], "title": "kryminał i akcja" },
-      { "hour": 5, "folders": ["filmy"], "title": "poranne kino (codziennie)" },
-      { "hour": 6, "days": [1, 2, 3, 4, 5], "folders": ["Shikanoko Nokonoko Koshitantan", "grand blue s1"], "title": "poranek z komedią (pon-pt)" },
-      { "hour": 6, "days": [6, 7], "folders": ["flying witch", "Delicious in Dungeon [Tenrai-Sensei]"], "title": "poranek z magią i gotowaniem (sob-nie)" },
-      { "hour": 7, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "one piece - śniadanie z piratami" },
-      { "hour": 8, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "one piece - śniadanie z piratami vol. 2" },
-      { "hour": 9, "days": [1, 2, 3, 4, 5], "folders": ["Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]", "Blue Box [Tenrai-Sensei]"], "title": "szkolne perypetie i romanse (pon-pt)" },
-      { "hour": 9, "days": [6, 7], "folders": ["Gekkan Shoujo Nozaki-kun", "Arte [Tenrai-Sensei]"], "title": "sztuka i absurdy (sob-nie)" },
-      { "hour": 10, "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu", "Wistoria - Wand and Sword [Tenrai-Sensei]"], "title": "klasa elity i magia (codziennie)" },
-      { "hour": 11, "folders": ["[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)"], "title": "przedpołudnie z lupinem" },
-      { "hour": 12, "folders": ["Frieren꞉ Beyond Journey's End [Tenrai-Sensei]", "Delicious in Dungeon [Tenrai-Sensei]"], "title": "wyprawa w nieznane (codziennie)" },
-      { "hour": 13, "folders": ["Chillin' In My 30S... [Tenrai-Sensei]", "The Wrong Way To Use Healing Magic [Tenrai-Sensei]"], "title": "isekaiowe popołudnie (codziennie)" },
-      { "hour": 14, "folders": ["Demon Lord 2099 [Tenrai-Sensei]", "Wistoria - Wand and Sword [Tenrai-Sensei]"], "title": "magia i technologia" },
-      { "hour": 15, "folders": ["grand blue s1", "Gekkan Shoujo Nozaki-kun"], "title": "popołudniowy chillout" },
-      { "hour": 16, "days": [1, 2, 3, 4, 5], "folders": ["flying witch", "Arte [Tenrai-Sensei]"], "title": "spokojne popołudnie (pon-pt)" },
-      { "hour": 16, "days": [6, 7], "folders": ["Zombieland Saga S01 EMBER", "Zombieland Saga S02 EMBER"], "title": "zombiakowy weekend (sob-nie)" },
-      { "hour": 17, "folders": ["Shikanoko Nokonoko Koshitantan", "Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]"], "title": "popołudniowy uśmiech (codziennie)" },
-      { "hour": 18, "folders": ["aot s1 25 odcinków_small", "re zero"], "title": "wieczorne emocje - tytani i magia" },
-      { "hour": 19, "folders": ["re zero", "Frieren꞉ Beyond Journey's End [Tenrai-Sensei]"], "title": "wieczór w innym świecie" },
-      { "hour": 20, "days": [1, 2, 3, 4, 5], "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "prime time: piraci (pon-pt)" },
-      { "hour": 20, "days": [6, 7], "folders": ["aot s1 25 odcinków_small", "Cyberpunk Edgerunners [Tenrai-Sensei]"], "title": "prime time: weekendowe hity (sob-nie)" },
-      { "hour": 21, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "wieczór z one piece (codziennie)" },
-      { "hour": 22, "days": [1, 2, 3, 4, 5], "folders": ["Gushing Over Magical Girls [Tenrai-Sensei]", "High school of the dead"], "title": "nocne pikanterie (pon-pt)" },
-      { "hour": 22, "days": [6, 7], "folders": ["High school of the dead", "Terror in Resonance [Tenrai-Sensei]"], "title": "nocne zombie i akcja (sob-nie)" },
-      { "hour": 23, "folders": ["Blue Box [Tenrai-Sensei]", "Link Click season 1"], "title": "późna noc komediowo-tajemnicza (codziennie)" }
-    ];
+    // Globalne zmienne, które zastąpią zahardkodowane obiekty
+    let episodesDB = {};
+    let scheduleData = [];
 
     const scheduleList = document.getElementById('schedule-list');
+    const dateInput = document.getElementById('schedule-date');
+    
+    // Ustawienie domyślnej daty na 'dzisiaj' w bezpiecznym formacie (YYYY-MM-DD)
+    const today = new Date();
+    const localIsoDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    dateInput.value = localIsoDate;
 
     function formatTime(hour) {
         return `${hour.toString().padStart(2, '0')}:00`;
     }
 
-    function getDaysLabel(days) {
-        if (!days) return "codziennie";
-        const isWeekdays = days.join(',') === '1,2,3,4,5';
-        const isWeekend = days.join(',') === '6,7';
-        if (isWeekdays) return "poniedziałek - piątek";
-        if (isWeekend) return "sobota - niedziela";
-        const dayNames = ["", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"];
-        return days.map(d => dayNames[d]).join(', ');
+    // Parser CSV transformujący listę na strukturę obsługiwaną przez ramówkę
+    async function fetchCSV() {
+        const res = await fetch("anime_lista.csv");
+        const text = await res.text();
+        const lines = text.trim().split('\n');
+        const db = {};
+
+        for(let i = 0; i < lines.length; i++) {
+            const row = lines[i];
+            if (!row.includes('";"')) continue;
+            const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
+            if (cols.length < 3) continue;
+
+            const fullPath = cols[0];
+            const fileName = cols[1];
+            const ext = cols[2];
+
+            const pathParts = fullPath.split(/\\|\//);
+            const folderName = pathParts[pathParts.length - 1];
+
+            if (!db[folderName]) db[folderName] = [];
+            db[folderName].push(fileName + ext);
+        }
+        return db;
     }
 
-    scheduleData.forEach(item => {
-        const el = document.createElement('div');
-        el.className = 'schedule-item';
-        
-        const timeHTML = `<div class="time-block">${formatTime(item.hour)}</div>`;
-        const foldersHTML = item.folders.map(folder => 
-            `<span class="folder-tag">📁 ${folder}</span>`
-        ).join('');
-        
-        const contentHTML = `
-            <div class="content-block">
-                <h3 class="title">${item.title}</h3>
-                <div class="days">📅 ${getDaysLabel(item.days)}</div>
-                <div class="folders">${foldersHTML}</div>
-            </div>
-        `;
-        
-        el.innerHTML = timeHTML + contentHTML;
-        scheduleList.appendChild(el);
-    });
-</script>
+    function renderSchedule(targetDateString) {
+        if (!scheduleData.length || Object.keys(episodesDB).length === 0) return;
 
+        scheduleList.innerHTML = '';
+        
+        // Bezpieczne parsowanie daty z kalendarza, odporne na przesunięcia czasowe
+        const [year, month, day] = targetDateString.split('-');
+        const targetDate = new Date(year, month - 1, day);
+        targetDate.setHours(0,0,0,0);
+        
+        // Obliczanie cyklu i wewnętrznego DOW na podstawie czasu Epoch
+        const localEpochMs = targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000);
+        const cycleDay = (Math.floor(localEpochMs / 86400000) % 182) + 1;
+        const currentDOW = ((cycleDay - 1) % 7) + 1; 
+        
+        const runsOnDOW = (cfg, dow) => !cfg.days || cfg.days.includes(dow);
+        
+        scheduleData.forEach(item => {
+            if (!runsOnDOW(item, currentDOW)) return; 
+            
+            const seriesFolders = item.folders || [item.folder];
+            const programKey = seriesFolders.join('|');
+            
+            // Płaskie łączenie odcinków z przypisanych folderów tak jak robi to TV
+            let allEpisodes = [];
+            for (const f of seriesFolders) {
+                if (episodesDB[f]) {
+                    episodesDB[f].forEach(fileName => {
+                        allEpisodes.push({ folder: f, file: fileName });
+                    });
+                }
+            }
+            
+            if (allEpisodes.length === 0) return;
+
+            const programConfigs = scheduleData.filter(cfg => {
+                const f = cfg.folders || [cfg.folder];
+                return f.join('|') === programKey;
+            });
+            
+            // Zliczanie historycznych emisji od pierwszego dnia cyklu do dzisiaj
+            let totalPastEpisodes = 0;
+            for (let d = 1; d < cycleDay; d++) {
+                const dow = ((d - 1) % 7) + 1;
+                for (const cfg of programConfigs) {
+                    if (runsOnDOW(cfg, dow)) {
+                        totalPastEpisodes++;
+                    }
+                }
+            }
+            
+            const todaysConfigs = programConfigs.filter(cfg => runsOnDOW(cfg, currentDOW)).sort((a,b) => a.hour - b.hour);
+            const H = todaysConfigs.length;
+            const i = todaysConfigs.findIndex(cfg => cfg.hour === item.hour);
+            
+            // --- ODCINEK 1 (pierwsza połowa godziny) ---
+            const slotIndex0 = i * 2 + 0;
+            const targetIndex0 = totalPastEpisodes - H + slotIndex0;
+            const safeIndex0 = ((targetIndex0 % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
+            const ep0 = allEpisodes[safeIndex0];
+            
+            // --- ODCINEK 2 (druga połowa godziny) ---
+            const slotIndex1 = i * 2 + 1;
+            const targetIndex1 = totalPastEpisodes - H + slotIndex1;
+            const safeIndex1 = ((targetIndex1 % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
+            const ep1 = allEpisodes[safeIndex1];
+            
+            // --- RENDEROWANIE WIDOKU ---
+            const el = document.createElement('div');
+            el.className = 'schedule-item';
+            
+            const timeHTML = `<div class="time-block">${formatTime(item.hour)}</div>`;
+            
+            let playingHTML = '';
+            
+            if (ep0 && ep1 && ep0.folder === ep1.folder) {
+                playingHTML += `
+                    <div class="ep-info">
+                        <span class="folder-tag">${ep0.folder}</span>
+                        <span class="ep-name">${ep0.file}</span>
+                        <span class="ep-name">${ep1.file}</span>
+                    </div>`;
+            } else {
+                if (ep0) {
+                    playingHTML += `
+                        <div class="ep-info">
+                            <span class="folder-tag">${ep0.folder}</span>
+                            <span class="ep-name">${ep0.file}</span>
+                        </div>`;
+                }
+                if (ep1) {
+                    playingHTML += `
+                        <div class="ep-info">
+                            <span class="folder-tag">${ep1.folder}</span>
+                            <span class="ep-name">${ep1.file}</span>
+                        </div>`;
+                }
+            }
+            
+            const contentHTML = `
+                <div class="content-block">
+                    <h3 class="title">${item.title}</h3>
+                    <div class="folders">${playingHTML}</div>
+                </div>
+            `;
+            
+            el.innerHTML = timeHTML + contentHTML;
+            scheduleList.appendChild(el);
+        });
+
+        // Debug info na dole pokazujące jak przeliczył się czas Unix
+        const infoDiv = document.createElement('div');
+        infoDiv.style.textAlign = 'center';
+        infoDiv.style.color = '#555';
+        infoDiv.style.marginTop = '25px';
+        infoDiv.style.fontSize = '0.85rem';
+        infoDiv.innerText = `Symulacja wewnętrzna TV - dzień cyklu: ${cycleDay}/182 | DOW: ${currentDOW}`;
+        scheduleList.appendChild(infoDiv);
+    }
+
+    // Inicjalizacja: Pobranie bazy na starcie
+    async function initSchedule() {
+        scheduleList.innerHTML = "<p style='text-align:center;'>Ładowanie danych ramówki...</p>";
+        try {
+            const [ramowkaRes, db] = await Promise.all([
+                fetch("ramowka.json"),
+                fetchCSV()
+            ]);
+            
+            scheduleData = await ramowkaRes.json();
+            episodesDB = db;
+
+            // Renderuj po udanym pobraniu
+            renderSchedule(dateInput.value);
+        } catch(e) {
+            console.error("Błąd pobierania bazy danych", e);
+            scheduleList.innerHTML = "<p style='text-align:center; color:#ff5555;'>Błąd pobierania danych. Upewnij się, że pliki anime_lista.csv i ramowka.json istnieją.</p>";
+        }
+    }
+
+    // Nasłuchiwanie zmian w kalendarzu
+    dateInput.addEventListener('change', (e) => {
+        renderSchedule(e.target.value);
+    });
+    
+    // Odpalenie po załadowaniu strony
+    initSchedule();
+</script>
 </body>
 </html>
