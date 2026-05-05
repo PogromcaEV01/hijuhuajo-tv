@@ -246,6 +246,12 @@
   </div>
 </div>
 <script>
+// --- KONFIGURACJA ---
+// Nazwa folderu na PC, w którym trzymasz anime. 
+// Skrypt utnie całą ścieżkę z CSV (np. C:\Anime\videos\...) aż do tego folderu włącznie, 
+// żeby wygenerować link idealnie pasujący do struktury w buckecie R3.
+const baseFolderToStrip = "videos"; 
+
 let scheduleConfig = [];
 let videosDB = {}; 
 const ambientFile = "https://aelwyd.space/ambient.mp4";
@@ -433,17 +439,25 @@ async function loadCSV() {
       durSec = durParts[0] * 60 + durParts[1];
     }
 
-    const pathParts = fullPath.split(/\\|\//).filter(Boolean); // dzieli i usuwa puste fragmenty
-    const folderName = pathParts[pathParts.length - 1]; // Zostaje do bazy (np. Zombieland Saga S01 EMBER)
+    // Unifikujemy ścieżki i tworzymy tablicę folderów
+    const pathParts = fullPath.replace(/\\/g, '/').split('/');
+    const folderName = pathParts[pathParts.length - 1]; // Ostatni folder (na potrzeby DB i ramówki)
+
+    // Odcinamy wszystko do folderu bazowego zdefiniowanego w konfiguracji
+    let r3Path = "";
+    const baseIdx = pathParts.findIndex(p => p.toLowerCase() === baseFolderToStrip.toLowerCase());
     
-    // Bierzemy tylko OSTATNIE 2 FOLDERY ze ścieżki i łączymy je
-    // Jeśli folder jest tylko 1, to weźmie 1. Ignoruje dyski, folder "videos" itp.
-    const relativePath = pathParts.slice(-2).join('/'); 
+    if (baseIdx !== -1) {
+      r3Path = pathParts.slice(baseIdx + 1).join('/'); 
+    } else {
+      // Fallback, jeśli ścieżka nie zawiera słowa "videos" – bierze tylko ostatni folder
+      r3Path = folderName; 
+    }
 
     if (!db[folderName]) db[folderName] = [];
     db[folderName].push({
       file: fileName + ext,
-      relativePath: relativePath,
+      r3Path: r3Path,
       durationSec: durSec || 1440 
     });
   }
@@ -572,7 +586,7 @@ function simulateUpTo(target_t, currentCycleDay) {
       if (target_t >= start_t && target_t < block_end_t) {
         if (target_t < end_t) {
           current_playback = {
-            type: 'video', folder: f, file: ep_info.file, relativePath: ep_info.relativePath,
+            type: 'video', folder: f, file: ep_info.file, r3Path: ep_info.r3Path,
             episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
             duration: duration, offsetSec: target_t - start_t,
             configTitle: config.title || f
@@ -627,10 +641,9 @@ function sync() {
   const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
   if (playback.type === 'video') {
-    // Rozbija względną ścieżkę i odpowiednio ją koduje
-    const encodedPath = playback.relativePath.split('/').map(encodeURIComponent).join('/');
+    // Poprawne zakodowanie ścieżki z zachowaniem wszystkich folderów po słowie "videos"
+    const encodedPath = playback.r3Path.split('/').map(encodeURIComponent).join('/');
     const videoUrl = `https://aelwyd.space/${encodedPath}/${encodeURIComponent(playback.file)}`;
-    
     const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
 
     if (video.dataset.slotId !== slotId) {
