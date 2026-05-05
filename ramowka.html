@@ -213,7 +213,7 @@
 </div>
 
 <script>
-    // Globalne zmienne, które zastąpią zahardkodowane obiekty
+    // --- ZMIENNE GLOBALNE ---
     let episodesDB = {};
     let scheduleData = [];
 
@@ -229,8 +229,8 @@
         return `${hour.toString().padStart(2, '0')}:00`;
     }
 
-    // Parser CSV transformujący listę na strukturę obsługiwaną przez ramówkę
-    async function fetchCSV() {
+    // --- FUNKCJE POBIERAJĄCE DANE ---
+    async function loadCSV() {
         const res = await fetch("anime_lista.csv");
         const text = await res.text();
         const lines = text.trim().split('\n');
@@ -240,7 +240,7 @@
             const row = lines[i];
             if (!row.includes('";"')) continue;
             const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
-            if (cols.length < 3) continue;
+            if (cols.length < 4) continue;
 
             const fullPath = cols[0];
             const fileName = cols[1];
@@ -250,14 +250,32 @@
             const folderName = pathParts[pathParts.length - 1];
 
             if (!db[folderName]) db[folderName] = [];
+            // Zapisujemy nazwę pliku z rozszerzeniem do wyświetlenia
             db[folderName].push(fileName + ext);
         }
         return db;
     }
 
-    function renderSchedule(targetDateString) {
-        if (!scheduleData.length || Object.keys(episodesDB).length === 0) return;
+    async function loadDataAndRender() {
+        scheduleList.innerHTML = '<p style="text-align:center;">Ładowanie danych z serwera...</p>';
+        try {
+            // Pobranie pliku JSON z ramówką
+            const resJson = await fetch("ramowka.json");
+            scheduleData = await resJson.json();
 
+            // Pobranie i parsowanie pliku CSV z listą odcinków
+            episodesDB = await loadCSV();
+
+            // Renderowanie widoku dla wybranej daty
+            renderSchedule(dateInput.value);
+        } catch (error) {
+            console.error("Błąd ładowania danych: ", error);
+            scheduleList.innerHTML = '<p style="text-align:center; color:red;">Nie udało się załadować danych ramówki (ramowka.json lub anime_lista.csv).</p>';
+        }
+    }
+
+    // --- LOGIKA RENDEROWANIA ---
+    function renderSchedule(targetDateString) {
         scheduleList.innerHTML = '';
         
         // Bezpieczne parsowanie daty z kalendarza, odporne na przesunięcia czasowe
@@ -273,7 +291,7 @@
         const runsOnDOW = (cfg, dow) => !cfg.days || cfg.days.includes(dow);
         
         scheduleData.forEach(item => {
-            if (!runsOnDOW(item, currentDOW)) return; 
+            if (!runsOnDOW(item, currentDOW)) return; // Ten blok nie leci tego dnia cyklu
             
             const seriesFolders = item.folders || [item.folder];
             const programKey = seriesFolders.join('|');
@@ -330,6 +348,7 @@
             
             let playingHTML = '';
             
+            // Estetyczne zgrupowanie, jeśli oba odcinki bloku pochodzą z tego samego folderu
             if (ep0 && ep1 && ep0.folder === ep1.folder) {
                 playingHTML += `
                     <div class="ep-info">
@@ -375,33 +394,16 @@
         scheduleList.appendChild(infoDiv);
     }
 
-    // Inicjalizacja: Pobranie bazy na starcie
-    async function initSchedule() {
-        scheduleList.innerHTML = "<p style='text-align:center;'>Ładowanie danych ramówki...</p>";
-        try {
-            const [ramowkaRes, db] = await Promise.all([
-                fetch("ramowka.json"),
-                fetchCSV()
-            ]);
-            
-            scheduleData = await ramowkaRes.json();
-            episodesDB = db;
-
-            // Renderuj po udanym pobraniu
-            renderSchedule(dateInput.value);
-        } catch(e) {
-            console.error("Błąd pobierania bazy danych", e);
-            scheduleList.innerHTML = "<p style='text-align:center; color:#ff5555;'>Błąd pobierania danych. Upewnij się, że pliki anime_lista.csv i ramowka.json istnieją.</p>";
-        }
-    }
-
     // Nasłuchiwanie zmian w kalendarzu
     dateInput.addEventListener('change', (e) => {
-        renderSchedule(e.target.value);
+        // Upewniamy się, że dane są załadowane zanim pozwolimy przerysować
+        if(scheduleData.length > 0) {
+            renderSchedule(e.target.value);
+        }
     });
     
-    // Odpalenie po załadowaniu strony
-    initSchedule();
+    // Odpalenie pobierania i budowania strony
+    loadDataAndRender();
 </script>
 </body>
 </html>
