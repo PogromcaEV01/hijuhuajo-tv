@@ -244,7 +244,7 @@
     const dateInput = document.getElementById('schedule-date');
     const loadingScreen = document.getElementById('loading-screen');
 
-    // --- ŁADOWANIE PLIKU CSV (skopiowane z index.html) ---
+    // --- ŁADOWANIE PLIKU CSV ---
     async function loadCSV() {
         const res = await fetch("anime_lista.csv");
         const text = await res.text();
@@ -281,7 +281,7 @@
         return db;
     }
 
-    // --- OBLICZANIE BLOKÓW (skopiowane z index.html) ---
+    // --- OBLICZANIE BLOKÓW ---
     function getBlockEnd(startTimeSec, durationSec) {
         const endTimeSec = startTimeSec + durationSec;
         const startHour = Math.floor(startTimeSec / 3600);
@@ -299,7 +299,7 @@
         }
     }
 
-    // --- LOGIKA SYMULACJI CAŁEGO DNIA ---
+    // --- LOGIKA SYMULACJI CAŁEGO DNIA Z UPOWAŻNIENIEM DO GAPÓW ---
     function simulateFullDay(targetCycleDay) {
         let t = 0; 
         let series_state = {};
@@ -397,7 +397,16 @@
             }
 
             if (advanced_t > t) {
-                t = advanced_t; 
+                // Wyliczamy najbliższą pełną godzinę po zakończeniu bloku
+                let next_full_hour = Math.ceil(advanced_t / 3600) * 3600;
+                
+                if (next_full_hour === advanced_t) {
+                    // Jeśli blok skończył się idealnie o równej godzinie
+                    t = advanced_t;
+                } else {
+                    // Jeśli blok skończył się "w połowie", przeskakujemy czas symulacji od razu do następnej pełnej godziny
+                    t = next_full_hour;
+                }
             } else {
                 t = Math.floor(t / 3600) * 3600 + 3600; 
             }
