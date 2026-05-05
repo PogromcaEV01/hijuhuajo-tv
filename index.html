@@ -48,19 +48,6 @@
       display: block;
     }
 
-    /* --- STYL NAKŁADKI DO PRZEJŚĆ --- */
-    #transition-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      pointer-events: none;
-      z-index: 5;
-      opacity: 0;
-    }
-
     #info {
       position: absolute;
       top: 15px; 
@@ -93,7 +80,7 @@
       box-sizing: border-box;
       color: white;
       transition: opacity 0.8s ease;
-      opacity: 0;
+      opacity: 0; 
       z-index: 20;
     }
 
@@ -183,7 +170,7 @@
     #settings-menu {
       position: absolute;
       bottom: 35px;
-      right: 0;
+      right: 0; 
       background: rgba(20, 20, 20, 0.9);
       border-radius: 6px;
       padding: 5px 0;
@@ -218,7 +205,6 @@
 <div class="tv-container">
   <div class="tv-screen" id="tv-screen">
     <video id="player" autoplay muted></video>
-    <canvas id="transition-overlay"></canvas>
     <div id="info">Inicjalizacja systemu...</div>
 
     <div id="custom-controls">
@@ -266,6 +252,7 @@ let videosDB = {};
 const ambientFile = "https://aelwyd.space/ambient.mp4";
 let currentIsAmbient = false;
 
+// --- DOM elements ---
 const video = document.getElementById("player");
 const progressBar = document.getElementById("progress-bar");
 const timeDisplay = document.getElementById("time-display");
@@ -283,6 +270,7 @@ const btnPip = document.getElementById("btn-pip");
 const btnToggleInfo = document.getElementById("btn-toggle-info");
 const btnMobileFullscreen = document.getElementById("btn-mobile-fullscreen");
 
+// --- LOGIKA ZANIKANIA PASKA (AUTO-HIDE) ---
 let activityTimeout;
 let isHoveringControls = false;
 
@@ -292,21 +280,18 @@ customControls.addEventListener("mouseleave", () => isHoveringControls = false);
 function resetActivityTimer() {
   tvScreen.classList.remove("hide-cursor");
   customControls.classList.add("active");
-  
   clearTimeout(activityTimeout);
-  
   activityTimeout = setTimeout(() => {
     if (!isHoveringControls) {
       tvScreen.classList.add("hide-cursor");
       customControls.classList.remove("active");
-      settingsMenu.classList.remove("show");
+      settingsMenu.classList.remove("show"); 
     }
   }, 2000);
 }
 
 tvScreen.addEventListener("mousemove", resetActivityTimer);
 tvScreen.addEventListener("click", resetActivityTimer);
-
 tvScreen.addEventListener("mouseleave", () => {
   clearTimeout(activityTimeout);
   tvScreen.classList.remove("hide-cursor");
@@ -314,6 +299,7 @@ tvScreen.addEventListener("mouseleave", () => {
   settingsMenu.classList.remove("show");
 });
 
+// --- LOGIKA WŁASNEGO ODTWARZACZA ---
 video.addEventListener("pause", () => {
     video.play().catch(() => {});
 });
@@ -352,7 +338,7 @@ volumeSlider.addEventListener("input", (e) => {
 });
 
 btnMenu.addEventListener("click", (e) => {
-  e.stopPropagation();
+  e.stopPropagation(); 
   settingsMenu.classList.toggle("show");
 });
 
@@ -362,9 +348,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-btnSchedule.addEventListener("click", () => {
-  window.location.href = "ramowka.html"; 
-});
+btnSchedule.addEventListener("click", () => window.location.href = "ramowka.html");
 
 btnPip.addEventListener("click", async () => {
   try {
@@ -381,11 +365,7 @@ btnPip.addEventListener("click", async () => {
 
 btnToggleInfo.addEventListener("click", () => {
   infoDiv.classList.toggle("hidden-info");
-  if (infoDiv.classList.contains("hidden-info")) {
-    btnToggleInfo.innerText = "pokaż informacje";
-  } else {
-    btnToggleInfo.innerText = "ukryj informacje";
-  }
+  btnToggleInfo.innerText = infoDiv.classList.contains("hidden-info") ? "pokaż informacje" : "ukryj informacje";
   settingsMenu.classList.remove("show");
 });
 
@@ -396,31 +376,22 @@ if (isMobileDevice) {
 
 btnMobileFullscreen.addEventListener("click", () => {
   if (!document.fullscreenElement) {
-    tvScreen.requestFullscreen().catch(err => {
-      console.error(`Błąd wejścia w tryb pełnoekranowy: ${err.message}`);
-    });
+    tvScreen.requestFullscreen().catch(err => console.error(err.message));
   } else {
     document.exitFullscreen();
   }
-  settingsMenu.classList.remove("show");
+  settingsMenu.classList.remove("show"); 
 });
 
 document.addEventListener("fullscreenchange", () => {
-  if (document.fullscreenElement) {
-    btnMobileFullscreen.innerText = "W ramce";
-  } else {
-    btnMobileFullscreen.innerText = "Pełny ekran";
-  }
+  btnMobileFullscreen.innerText = document.fullscreenElement ? "W ramce" : "Pełny ekran";
 });
 
 btnFullscreen.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const elementToFullscreen = isMobile ? document.documentElement : tvScreen;
-
-    elementToFullscreen.requestFullscreen().catch(err => {
-      console.error(`Błąd wejścia w tryb pełnoekranowy: ${err.message}`);
-    });
+    elementToFullscreen.requestFullscreen().catch(err => console.error(err.message));
   } else {
     document.exitFullscreen();
   }
@@ -430,36 +401,48 @@ video.addEventListener("loadedmetadata", () => {
   timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
 });
 
+// --- LOGIKA RAMÓWKI TV Z SYMULACJĄ (EFEKT DOMINA) ---
+
 function getCycleDay() {
   const now = new Date();
   const localEpochMs = now.getTime() - (now.getTimezoneOffset() * 60000);
   return (Math.floor(localEpochMs / 86400000) % 182) + 1;
 }
 
+// Zmodyfikowany parser CSV pobierający czasy trwania
 async function loadCSV() {
   const res = await fetch("anime_lista.csv");
   const text = await res.text();
   const lines = text.trim().split('\n');
   const db = {};
 
-  for(let i = 1; i < lines.length; i++) {
+  for(let i = 0; i < lines.length; i++) {
     const row = lines[i];
+    if (!row.includes('";"')) continue;
     const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
-    if (cols.length < 3) continue;
+    if (cols.length < 4) continue;
 
     const fullPath = cols[0];
     const fileName = cols[1];
     const ext = cols[2];
+    const durationStr = cols[3]; // Pobieranie czasu "HH:MM:SS"
 
-    const pathParts = fullPath.split('\\');
+    let durParts = durationStr.split(':').map(Number);
+    let durSec = 0;
+    if (durParts.length === 3) {
+      durSec = durParts[0] * 3600 + durParts[1] * 60 + durParts[2];
+    } else if (durParts.length === 2) {
+      durSec = durParts[0] * 60 + durParts[1];
+    }
+
+    const pathParts = fullPath.split(/\\|\//);
     const folderName = pathParts[pathParts.length - 1];
 
     if (!db[folderName]) db[folderName] = [];
-    db[folderName].push(fileName + ext);
-  }
-
-  for (const folder in db) {
-    db[folder].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+    db[folderName].push({
+      file: fileName + ext,
+      durationSec: durSec || 1440 // Zabezpieczenie (domyślnie 24 min)
+    });
   }
   return db;
 }
@@ -479,152 +462,185 @@ async function startTV() {
   setInterval(sync, 5000);
 }
 
-function playAmbient() {
+// Logika rezerwacji bloków czasowych
+function getBlockEnd(startTimeSec, durationSec) {
+  const endTimeSec = startTimeSec + durationSec;
+  const startHour = Math.floor(startTimeSec / 3600);
+  const endHour = Math.floor((endTimeSec - 1) / 3600); // -1 rozwiązuje przypadek pełnej godziny
+
+  if (endHour > startHour) {
+    // Jeśli plik wjechał na nową godzinę, zajmuje ją w całości (efekt domina)
+    return (endHour + 1) * 3600;
+  } else {
+    // Jeśli zmieścił się w godzinie, rezerwuje połówkę lub pełną, zależnie od tego, kiedy się kończy
+    const halfHourSec = startHour * 3600 + 1800;
+    if (startTimeSec < halfHourSec && endTimeSec <= halfHourSec) {
+      return halfHourSec;
+    } else {
+      return (startHour + 1) * 3600;
+    }
+  }
+}
+
+// Główny silnik symulujący kalendarz od Sekundy 0
+function simulateUpTo(target_t, currentCycleDay) {
+  let t = 0; // Czas w symulacji (w sekundach)
+  let series_state = {};
+  for(let f in videosDB) {
+    series_state[f] = { next_ep_idx: 0 };
+  }
+
+  let current_playback = null;
+  const max_t = currentCycleDay * 86400; // Granica symulacji - koniec dzisiejszego dnia
+
+  while (t <= target_t && t < max_t) {
+    let day = Math.floor(t / 86400) + 1;
+    let hour = Math.floor((t % 86400) / 3600);
+    let dow = ((day - 1) % 7) + 1;
+
+    let configConfigs = scheduleConfig.filter(x => x.hour === hour);
+    let config = configConfigs.find(x => !x.days || x.days.includes(dow)) || configConfigs[0];
+
+    if (!config) {
+      let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
+      if (target_t >= t && target_t < next_hour_t) {
+        current_playback = { type: 'ambient', offsetSec: target_t - t };
+      }
+      t = next_hour_t;
+      continue;
+    }
+
+    let folders = config.folders || [config.folder];
+    let advanced_t = t;
+
+    for (let f of folders) {
+      if (!videosDB[f] || videosDB[f].length === 0) continue;
+
+      let db = videosDB[f];
+      let total_eps = db.length;
+      let state = series_state[f];
+      let eps_to_play = [];
+
+      if (total_eps === 1) {
+        // Seria jednoodcinkowa (film) - tylko premiera, bez powtórek
+        eps_to_play.push( { type: 'premiere', idx: 0 } );
+      } else {
+        // Zwykłe serie i maratony
+        if (state.next_ep_idx === 0) {
+          eps_to_play.push( { type: 'premiere', idx: 0 } );
+          state.next_ep_idx++;
+        } else {
+          eps_to_play.push( { type: 'rerun', idx: (state.next_ep_idx - 1) % total_eps } );
+          eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx % total_eps } );
+          state.next_ep_idx++;
+        }
+      }
+
+      for (let ep of eps_to_play) {
+        let ep_info = db[ep.idx];
+        let duration = ep_info.durationSec;
+        let start_t = advanced_t;
+        let end_t = start_t + duration;
+        let block_end_t = getBlockEnd(start_t, duration);
+
+        if (target_t >= start_t && target_t < block_end_t) {
+          if (target_t < end_t) {
+            current_playback = {
+              type: 'video', folder: f, file: ep_info.file,
+              episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
+              duration: duration, offsetSec: target_t - start_t,
+              configTitle: config.title || f
+            };
+          } else {
+            // Czas w bloku się ostał, więc gramy ambient
+            current_playback = { type: 'ambient', offsetSec: target_t - end_t };
+          }
+        }
+        advanced_t = block_end_t;
+      }
+    }
+
+    if (advanced_t > t) {
+      t = advanced_t; // Pomyślnie zajęto czas, przesuń zegar na koniec bloku
+    } else {
+      t = Math.floor(t / 3600) * 3600 + 3600; // Pusty folder, idziemy do następnej godziny
+    }
+  }
+  return current_playback;
+}
+
+function playAmbient(ambientOffsetSec = 0) {
   if (currentIsAmbient) return;
   
   currentIsAmbient = true;
   video.src = ambientFile;
   video.loop = true;
+  video.dataset.slotId = "ambient";
   video.load();
   
   video.onloadedmetadata = () => {
-    const now = new Date();
-    const offsetSec = (now.getMinutes() % 30) * 60 + now.getSeconds();
-    const epDur = parseFloat(video.dataset.epDuration || 1380); 
-    video.currentTime = Math.max(0, offsetSec - epDur) % (video.duration || 1);
+    video.currentTime = ambientOffsetSec % (video.duration || 1);
     video.play().catch(() => {});
   };
-}
-
-function playAmbientWithTransition() {
-  if (currentIsAmbient) return;
-  
-  const overlay = document.getElementById("transition-overlay");
-  const ctx = overlay.getContext("2d");
-
-  if (video.videoWidth > 0 && video.videoHeight > 0) {
-    overlay.width = video.videoWidth;
-    overlay.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, overlay.width, overlay.height);
-
-    overlay.style.transition = "none";
-    overlay.style.opacity = "1";
-
-    void overlay.offsetWidth;
-
-    overlay.style.transition = "opacity 2s ease";
-    overlay.style.opacity = "0";
-  }
-
-  playAmbient();
 }
 
 function sync() {
   const now = new Date();
   const cycleDay = getCycleDay();
-  const currentDOW = ((cycleDay - 1) % 7) + 1; 
   
   const h = now.getHours();
   const m = now.getMinutes();
   const s = now.getSeconds();
+  
+  // Przeliczanie obecnego czasu w sekundach od startu cyklu
+  const target_t = (cycleDay - 1) * 86400 + h * 3600 + m * 60 + s;
 
-  const isSecondHalf = m >= 30;
+  // Odpalenie symulacji, by zobaczyć "gdzie jesteśmy" w historii telewizji
+  const playback = simulateUpTo(target_t, cycleDay);
 
-  const hourConfigs = scheduleConfig.filter(x => x.hour === h);
-  let hourConfig = hourConfigs.find(x => !x.days || x.days.includes(currentDOW));
-  if (!hourConfig) hourConfig = hourConfigs[0] || scheduleConfig[0];
-
-  const seriesFolders = hourConfig.folders || [hourConfig.folder];
-  const programKey = seriesFolders.join('|');
-
-  let allEpisodes = [];
-  for (const f of seriesFolders) {
-    if (videosDB[f]) {
-      videosDB[f].forEach(fileName => {
-        allEpisodes.push({ folder: f, file: fileName });
-      });
-    }
-  }
-
-  if (allEpisodes.length === 0) {
-    document.getElementById("info").innerText = `BRAK FILMÓW W FOLDERACH: ${seriesFolders.join(', ')} 💀`;
+  if (!playback) {
+    document.getElementById("info").innerText = "Brak programu do wyświetlenia.";
     return;
   }
 
-  const runsOnDOW = (cfg, dow) => !cfg.days || cfg.days.includes(dow);
-  
-  const programConfigs = scheduleConfig.filter(cfg => {
-      const f = cfg.folders || [cfg.folder];
-      return f.join('|') === programKey;
-  });
+  const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
-  let totalPastEpisodes = 0;
-  for (let d = 1; d < cycleDay; d++) {
-      const dow = ((d - 1) % 7) + 1;
-      for (const cfg of programConfigs) {
-          if (runsOnDOW(cfg, dow)) {
-              totalPastEpisodes++;
-          }
-      }
-  }
+  if (playback.type === 'video') {
+    const videoUrl = `https://aelwyd.space/${encodeURIComponent(playback.folder)}/${encodeURIComponent(playback.file)}`;
+    const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
 
-  const todaysConfigs = programConfigs.filter(cfg => runsOnDOW(cfg, currentDOW)).sort((a,b) => a.hour - b.hour);
-  
-  const H = todaysConfigs.length;
-  if (H === 0) return;
+    if (video.dataset.slotId !== slotId) {
+      video.dataset.slotId = slotId;
+      video.src = videoUrl;
+      currentIsAmbient = false;
+      video.load();
 
-  const i = todaysConfigs.findIndex(cfg => cfg.hour === h);
-  const j = isSecondHalf ? 1 : 0;
-  const slotIndex = i * 2 + j;
-
-  const targetIndex = totalPastEpisodes - H + slotIndex;
-  const safeIndex = ((targetIndex % allEpisodes.length) + allEpisodes.length) % allEpisodes.length;
-
-  const currentEpisode = allEpisodes[safeIndex];
-  const currentFolder = currentEpisode.folder;
-  const currentFileName = currentEpisode.file;
-
-  const videoUrl = `https://aelwyd.space/${encodeURIComponent(currentFolder)}/${encodeURIComponent(currentFileName)}`;
-  
-  const slotId = `${currentFolder}-${currentFileName}-${slotIndex}`;
-  const offsetSec = (m % 30) * 60 + s;
-
-  if (video.dataset.slotId !== slotId) {
-    video.dataset.slotId = slotId;
-    video.src = videoUrl;
-    currentIsAmbient = false;
-    video.load();
-
-    video.onloadedmetadata = () => {
-      video.dataset.epDuration = video.duration;
-      timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
-
-      if (offsetSec >= video.duration) {
-        playAmbient();
-      } else {
-        video.currentTime = offsetSec;
+      video.onloadedmetadata = () => {
+        video.dataset.epDuration = playback.duration;
+        video.currentTime = playback.offsetSec;
         video.play().catch(() => {});
-      }
-    };
+      };
 
-    video.onended = () => {
-      if (!currentIsAmbient) playAmbientWithTransition();
-    };
-  } else {
-    if (!currentIsAmbient && video.readyState >= 1) {
-      if (offsetSec >= parseFloat(video.dataset.epDuration || 99999)) {
-        playAmbientWithTransition();
+      video.onended = () => {
+        if (!currentIsAmbient) playAmbient();
+      };
+    } else {
+      if (!currentIsAmbient && video.readyState >= 1) {
+        if (playback.offsetSec >= playback.duration) {
+          playAmbient();
+        }
       }
     }
+
+    const typeLabel = playback.isRerun ? 'powtórka' : 'nowy';
+    document.getElementById("info").innerText =
+      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.configTitle} | odc. ${playback.episodeIndex} (${typeLabel})`;
+
+  } else if (playback.type === 'ambient') {
+    playAmbient(playback.offsetSec);
+    document.getElementById("info").innerText =
+      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} | Przerwa`;
   }
-
-  const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-  const typeLabel = currentIsAmbient ? '🌿 ambient' : '📺 trwa';
-  const episodeInfo = slotIndex < H ? 'w' : 'd';
-  const episodeIndexInCurrentSeries = videosDB[currentFolder].indexOf(currentFileName) + 1;
-
-  document.getElementById("info").innerText =
-    `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${hourConfig.title} | ${currentFolder} odc. ${episodeIndexInCurrentSeries} ${episodeInfo}`;
 }
 
 startTV();
