@@ -655,12 +655,12 @@ function sync() {
 
     const typeLabel = playback.isRerun ? 'powtórka' : 'nowy';
     document.getElementById("info").innerText =
-      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.configTitle} | odc. ${playback.episodeIndex} (${typeLabel})`;
+      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.configTitle} | odc. ${playback.episodeIndex} |`;
 
   } else if (playback.type === 'ambient') {
     playAmbient(playback.offsetSec);
     document.getElementById("info").innerText =
-      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} | Przerwa`;
+      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} |`;
   }
 }
 
