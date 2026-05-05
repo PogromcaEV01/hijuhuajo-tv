@@ -1,1 +1,233 @@
 
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ramówka emisji</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --accent: #bb86fc;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .schedule-container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: var(--card-bg);
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 1px solid rgba(187, 134, 252, 0.3);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .back-btn:hover {
+            background-color: var(--accent);
+            color: #121212;
+            transform: scale(1.05);
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--accent);
+            margin-top: 60px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .schedule-item {
+            background-color: var(--card-bg);
+            margin-bottom: 15px;
+            border-radius: 10px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .schedule-item:hover {
+            transform: translateX(5px);
+            border-left: 4px solid var(--accent);
+        }
+        
+        .time-block {
+            background-color: var(--accent);
+            color: #121212;
+            font-weight: 900;
+            font-size: 1.4rem;
+            padding: 20px;
+            min-width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .content-block {
+            padding: 15px 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            color: #ffffff;
+        }
+        
+        .days {
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .folders {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .folder-tag {
+            background-color: #2c2c2c;
+            color: #cfcfcf;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            border: 1px solid #444;
+        }
+
+        @media (max-width: 500px) {
+            .back-btn {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            h1 {
+                margin-top: 50px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        wróć do tv
+    </a>
+
+<div class="schedule-container">
+    <h1>📺 ramówka transmisji</h1>
+    <div id="schedule-list"></div>
+</div>
+
+<script>
+    // Zaktualizowane dane JSON[cite: 2]
+    const scheduleData = [
+      { "hour": 0, "folders": ["Cyberpunk Edgerunners [Tenrai-Sensei]", "1a. OVA - B.C. 2033 (1987-91)"], "title": "nocny cyberpunk i sci-fi (codziennie)" },
+      { "hour": 1, "folders": ["1c. Series - B.C. TOKYO 2040 (1998-99)", "Iria Zeiram [sxales]"], "title": "nocne tajemnice i mrok (codziennie)" },
+      { "hour": 2, "folders": ["[HorribleSubs] Lupin III Part I (01-23) [480p] (Batch)", "[HorribleSubs] Lupin III Part II (01-155) [480p] (Batch)"], "title": "lupin - klasyka nocą" },
+      { "hour": 3, "folders": ["Terror in Resonance [Tenrai-Sensei]", "Link Click season 1"], "title": "nocne thrillery" },
+      { "hour": 4, "folders": ["Link Click season 2", "2a. OVA - A.D. Police Files (1990)"], "title": "kryminał i akcja" },
+      { "hour": 5, "folders": ["filmy"], "title": "poranne kino (codziennie)" },
+      { "hour": 6, "days": [1, 2, 3, 4, 5], "folders": ["Shikanoko Nokonoko Koshitantan", "grand blue s1"], "title": "poranek z komedią (pon-pt)" },
+      { "hour": 6, "days": [6, 7], "folders": ["flying witch", "Delicious in Dungeon [Tenrai-Sensei]"], "title": "poranek z magią i gotowaniem (sob-nie)" },
+      { "hour": 7, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "one piece - śniadanie z piratami" },
+      { "hour": 8, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "one piece - śniadanie z piratami vol. 2" },
+      { "hour": 9, "days": [1, 2, 3, 4, 5], "folders": ["Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]", "Blue Box [Tenrai-Sensei]"], "title": "szkolne perypetie i romanse (pon-pt)" },
+      { "hour": 9, "days": [6, 7], "folders": ["Gekkan Shoujo Nozaki-kun", "Arte [Tenrai-Sensei]"], "title": "sztuka i absurdy (sob-nie)" },
+      { "hour": 10, "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu", "Wistoria - Wand and Sword [Tenrai-Sensei]"], "title": "klasa elity i magia (codziennie)" },
+      { "hour": 11, "folders": ["[HorribleSubs] Lupin III Part III (01-50) [480p] (Batch)"], "title": "przedpołudnie z lupinem" },
+      { "hour": 12, "folders": ["Frieren꞉ Beyond Journey's End [Tenrai-Sensei]", "Delicious in Dungeon [Tenrai-Sensei]"], "title": "wyprawa w nieznane (codziennie)" },
+      { "hour": 13, "folders": ["Chillin' In My 30S... [Tenrai-Sensei]", "The Wrong Way To Use Healing Magic [Tenrai-Sensei]"], "title": "isekaiowe popołudnie (codziennie)" },
+      { "hour": 14, "folders": ["Demon Lord 2099 [Tenrai-Sensei]", "Wistoria - Wand and Sword [Tenrai-Sensei]"], "title": "magia i technologia" },
+      { "hour": 15, "folders": ["grand blue s1", "Gekkan Shoujo Nozaki-kun"], "title": "popołudniowy chillout" },
+      { "hour": 16, "days": [1, 2, 3, 4, 5], "folders": ["flying witch", "Arte [Tenrai-Sensei]"], "title": "spokojne popołudnie (pon-pt)" },
+      { "hour": 16, "days": [6, 7], "folders": ["Zombieland Saga S01 EMBER", "Zombieland Saga S02 EMBER"], "title": "zombiakowy weekend (sob-nie)" },
+      { "hour": 17, "folders": ["Shikanoko Nokonoko Koshitantan", "Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]"], "title": "popołudniowy uśmiech (codziennie)" },
+      { "hour": 18, "folders": ["aot s1 25 odcinków_small", "re zero"], "title": "wieczorne emocje - tytani i magia" },
+      { "hour": 19, "folders": ["re zero", "Frieren꞉ Beyond Journey's End [Tenrai-Sensei]"], "title": "wieczór w innym świecie" },
+      { "hour": 20, "days": [1, 2, 3, 4, 5], "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "prime time: piraci (pon-pt)" },
+      { "hour": 20, "days": [6, 7], "folders": ["aot s1 25 odcinków_small", "Cyberpunk Edgerunners [Tenrai-Sensei]"], "title": "prime time: weekendowe hity (sob-nie)" },
+      { "hour": 21, "folders": ["[F-R] One Piece 0001-0782 (Batch)"], "title": "wieczór z one piece (codziennie)" },
+      { "hour": 22, "days": [1, 2, 3, 4, 5], "folders": ["Gushing Over Magical Girls [Tenrai-Sensei]", "High school of the dead"], "title": "nocne pikanterie (pon-pt)" },
+      { "hour": 22, "days": [6, 7], "folders": ["High school of the dead", "Terror in Resonance [Tenrai-Sensei]"], "title": "nocne zombie i akcja (sob-nie)" },
+      { "hour": 23, "folders": ["Blue Box [Tenrai-Sensei]", "Link Click season 1"], "title": "późna noc komediowo-tajemnicza (codziennie)" }
+    ];
+
+    const scheduleList = document.getElementById('schedule-list');
+
+    function formatTime(hour) {
+        return `${hour.toString().padStart(2, '0')}:00`;
+    }
+
+    function getDaysLabel(days) {
+        if (!days) return "codziennie";
+        const isWeekdays = days.join(',') === '1,2,3,4,5';
+        const isWeekend = days.join(',') === '6,7';
+        if (isWeekdays) return "poniedziałek - piątek";
+        if (isWeekend) return "sobota - niedziela";
+        const dayNames = ["", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"];
+        return days.map(d => dayNames[d]).join(', ');
+    }
+
+    scheduleData.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'schedule-item';
+        
+        const timeHTML = `<div class="time-block">${formatTime(item.hour)}</div>`;
+        const foldersHTML = item.folders.map(folder => 
+            `<span class="folder-tag">📁 ${folder}</span>`
+        ).join('');
+        
+        const contentHTML = `
+            <div class="content-block">
+                <h3 class="title">${item.title}</h3>
+                <div class="days">📅 ${getDaysLabel(item.days)}</div>
+                <div class="folders">${foldersHTML}</div>
+            </div>
+        `;
+        
+        el.innerHTML = timeHTML + contentHTML;
+        scheduleList.appendChild(el);
+    });
+</script>
+
+</body>
+</html>
