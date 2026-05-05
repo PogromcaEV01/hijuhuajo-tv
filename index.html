@@ -583,7 +583,21 @@ function simulateUpTo(target_t, currentCycleDay) {
     }
 
     if (advanced_t > t) {
-      t = advanced_t; 
+      // Wyliczamy najbliższą pełną godzinę po zakończeniu bloku
+      let next_full_hour = Math.ceil(advanced_t / 3600) * 3600;
+      
+      if (next_full_hour === advanced_t) {
+        // Jeśli blok skończył się idealnie o równej godzinie (np. 15:00)
+        t = advanced_t;
+      } else {
+        // Jeśli blok skończył się "w połowie" (np. 14:30 lub 15:30)
+        // Wypełniamy lukę do następnej pełnej godziny ambientem
+        if (target_t >= advanced_t && target_t < next_full_hour) {
+          current_playback = { type: 'ambient', offsetSec: target_t - advanced_t };
+        }
+        // Wymuszamy przeskok czasu symulacji od razu do następnej pełnej godziny
+        t = next_full_hour;
+      }
     } else {
       t = Math.floor(t / 3600) * 3600 + 3600; 
     }
