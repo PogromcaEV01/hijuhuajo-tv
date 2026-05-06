@@ -664,8 +664,9 @@ function sync() {
     }
 
     const typeLabel = playback.isRerun ? 'powtórka' : 'nowy';
+    const shortFolderName = playback.folder.split('/').pop(); // Pobiera tylko tekst po ostatnim ukośniku
     document.getElementById("info").innerText =
-      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.folder} odc. ${playback.episodeIndex}`;
+      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${shortFolderName} odc. ${playback.episodeIndex}`;
 
   } else if (playback.type === 'ambient') {
     playAmbient(playback.offsetSec);
