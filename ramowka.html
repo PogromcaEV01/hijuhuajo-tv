@@ -399,6 +399,47 @@
                 padding: 15px;
             }
         }
+        /* --- REAKCJA: 50% załadowania (1.5 sekundy) --- */
+body.btn-halfway .spotlight-overlay {
+    background: radial-gradient(circle at center, rgba(255, 0, 85, 0.25) 0%, #000000 85%);
+    box-shadow: inset 0 0 350px rgba(255, 0, 85, 0.6);
+    transition: all 0.2s ease-in-out;
+}
+
+body.btn-halfway .cyber-grid {
+    filter: drop-shadow(0 0 80px #ff0055) hue-rotate(150deg) brightness(1.8);
+    /* Znacznie szybsza animacja + wstrząsy siatki */
+    animation: gridWarpSpeed 0.05s linear infinite, shakeGrid 0.2s infinite;
+}
+
+body.btn-halfway .schedule-container {
+    /* Trzęsienie samej zawartości strony i poświata */
+    animation: shakeUI 0.3s infinite;
+    filter: drop-shadow(0 0 15px rgba(255, 0, 85, 0.4));
+}
+
+body.btn-halfway .progress-overlay {
+    /* Pasek ładowania zmienia kolor na ostrzejszy */
+    background: linear-gradient(90deg, rgba(255, 70, 197, 0.8), #ff0055);
+}
+
+body.btn-halfway .epic-twitch-btn {
+    animation: shakeUI 0.2s infinite;
+}
+
+@keyframes shakeGrid {
+    0%, 100% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(0); }
+    25% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(-6px); }
+    50% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(6px); }
+    75% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(-6px); }
+}
+
+@keyframes shakeUI {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-2px, 2px) rotate(-0.5deg); }
+    50% { transform: translate(2px, -2px) rotate(0.5deg); }
+    75% { transform: translate(-2px, -2px) rotate(-0.5deg); }
+}
     </style>
 </head>
 <body>
@@ -443,33 +484,58 @@
     const btn = document.getElementById('godTierBtn');
     const bdy = document.body;
     let holdTimer; 
+    let halfwayTimer; // Nowy timer dla połowy czasu
+
+    // Funkcja resetująca wszystkie timery i klasy
+    function clearTimers() {
+        clearTimeout(holdTimer);
+        clearTimeout(halfwayTimer);
+        bdy.classList.remove('btn-clicked', 'btn-halfway');
+    }
 
     // Myszka / Desktop
     btn.addEventListener('mouseenter', () => { bdy.classList.add('btn-hovered'); });
     btn.addEventListener('mouseleave', () => {
         bdy.classList.remove('btn-hovered');
-        bdy.classList.remove('btn-clicked');
-        clearTimeout(holdTimer); 
+        clearTimers(); 
     });
+    
     btn.addEventListener('mousedown', () => {
         bdy.classList.add('btn-clicked');
-        holdTimer = setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+        
+        // Aktywacja reakcji po 1.5 sekundy
+        halfwayTimer = setTimeout(() => { 
+            bdy.classList.add('btn-halfway'); 
+        }, 1500);
+
+        // Przekierowanie po pełnych 3 sekundach
+        holdTimer = setTimeout(() => { 
+            window.location.href = 'index.html'; 
+        }, 3000);
     });
+    
     btn.addEventListener('mouseup', () => {
-        bdy.classList.remove('btn-clicked');
-        clearTimeout(holdTimer); 
+        clearTimers(); 
     });
 
     // Dotyk / Mobile
     btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         bdy.classList.add('btn-hovered', 'btn-clicked');
-        holdTimer = setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+        
+        halfwayTimer = setTimeout(() => { 
+            bdy.classList.add('btn-halfway'); 
+        }, 1500);
+
+        holdTimer = setTimeout(() => { 
+            window.location.href = 'index.html'; 
+        }, 3000);
     }, {passive: false});
+    
     btn.addEventListener('touchend', (e) => {
         e.preventDefault();
-        bdy.classList.remove('btn-hovered', 'btn-clicked');
-        clearTimeout(holdTimer);
+        bdy.classList.remove('btn-hovered');
+        clearTimers();
     }, {passive: false});
 
 
