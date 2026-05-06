@@ -17,36 +17,49 @@
             --accent-hover: #9c4dff;
         }
         
+        /* Tło przeniesione do html, żeby poprawnie współpracowało z z-index */
+        html {
+            background-color: var(--bg-color);
+        }
+
         body {
             font-family: 'Shadows Into Light', cursive;
-            background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
             font-size: 18px;
-            perspective: 1000px; /* Głębia 3D dla tła */
+            /* Usunięto perspective stąd, bo psuło fixed na długich stronach */
         }
         
         .schedule-container {
             max-width: 800px;
             width: 100%;
+            position: relative; /* Upewnia się, że treść jest nad tłem */
             z-index: 10;
         }
 
-        /* --- EFEKTY TŁA Z VNRIKE --- */
-        .spotlight-overlay {
+        /* --- NOWY WRAPPER NA EFEKTY TŁA Z VNRIKE --- */
+        .bg-wrapper {
             position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            perspective: 1000px; /* Głębia 3D jest teraz tutaj */
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden; /* Blokuje wychodzenie siatki poza ekran */
+        }
+
+        .spotlight-overlay {
+            position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: radial-gradient(circle at center, rgba(145, 70, 255, 0.05) 0%, #000000 80%);
             transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-            z-index: -1;
-            pointer-events: none;
+            z-index: 1;
         }
 
         .cyber-grid {
-            position: fixed;
+            position: absolute;
             bottom: -50%; left: -50%;
             width: 200%; height: 200%;
             background-image: 
@@ -55,8 +68,7 @@
             background-size: 50px 50px;
             transform: rotateX(75deg) translateY(0);
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: -2;
-            pointer-events: none;
+            z-index: 0;
         }
 
         /* REAKCJA: Hover na przycisku */
@@ -74,16 +86,15 @@
             filter: drop-shadow(0 0 10px #9146ff);
         }
 
-        /* REAKCJA: Kliknięcie przycisku (Płynny, głęboki wjazd / Warp drive) */
+        /* REAKCJA: Kliknięcie przycisku (Płynny, kinowy Warp drive) */
         body.btn-clicked .spotlight-overlay {
             background: radial-gradient(circle at center, rgba(255, 70, 197, 0.15) 0%, #000000 90%);
             box-shadow: inset 0 0 250px rgba(255, 70, 197, 0.4);
-            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1); /* Płynnie rozjaśnia się przez 3 sekundy */
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body.btn-clicked .cyber-grid {
             filter: drop-shadow(0 0 50px #ff46c5) hue-rotate(90deg) brightness(1.3);
-            /* Zamiast trzęsienia - kinowy, gładki zoom-in w głąb siatki 3D przez równe 3 sekundy */
             transform: rotateX(82deg) translateY(150px) scale(2.2);
             transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1), filter 3s ease-out;
             animation: gridWarpSpeed 0.15s linear infinite; 
@@ -94,7 +105,7 @@
             100% { background-position: 0 50px; }
         }
 
-        /* --- GOD-TIER BUTTON (Zaadaptowany jako Back-Btn) --- */
+        /* --- GOD-TIER BUTTON (Back-Btn) --- */
         .button-wrapper {
             position: fixed;
             top: 20px;
@@ -392,8 +403,10 @@
 </head>
 <body>
 
-    <div class="cyber-grid"></div>
-    <div class="spotlight-overlay"></div>
+    <div class="bg-wrapper">
+        <div class="cyber-grid"></div>
+        <div class="spotlight-overlay"></div>
+    </div>
 
     <div class="button-wrapper">
         <div class="pulse-ring"></div>
