@@ -399,46 +399,55 @@
                 padding: 15px;
             }
         }
-        /* --- REAKCJA: 50% załadowania (1.5 sekundy) --- */
+        /* --- REAKCJA: 50% załadowania (1.5 sekundy) - GOD TIER SMOOTH --- */
+
+/* Płynne przejście tła w "rdzeń warp" - oślepiające, czyste światło */
 body.btn-halfway .spotlight-overlay {
-    background: radial-gradient(circle at center, rgba(255, 0, 85, 0.25) 0%, #000000 85%);
-    box-shadow: inset 0 0 350px rgba(255, 0, 85, 0.6);
-    transition: all 0.2s ease-in-out;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, rgba(145, 70, 255, 0.15) 50%, #000000 100%);
+    box-shadow: inset 0 0 400px rgba(255, 255, 255, 0.4);
+    /* Czas przejścia to dokładnie 1.5s - idealnie zgra się z końcem paska */
+    transition: all 1.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+/* Siatka warp zagina się ekstremalnie i przyspiesza, ale nieskazitelnie płynnie */
 body.btn-halfway .cyber-grid {
-    filter: drop-shadow(0 0 80px #ff0055) hue-rotate(150deg) brightness(1.8);
-    /* Znacznie szybsza animacja + wstrząsy siatki */
-    animation: gridWarpSpeed 0.05s linear infinite, shakeGrid 0.2s infinite;
+    filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.8)) hue-rotate(220deg) brightness(2);
+    transform: rotateX(86deg) translateY(250px) scale(3.5);
+    transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1), filter 1.5s ease-in-out;
+    animation: godTierWarp 0.08s linear infinite; 
 }
 
+/* Interfejs "wgniata się w fotel" (G-Force) i dostaje świetlistej aury */
 body.btn-halfway .schedule-container {
-    /* Trzęsienie samej zawartości strony i poświata */
-    animation: shakeUI 0.3s infinite;
-    filter: drop-shadow(0 0 15px rgba(255, 0, 85, 0.4));
+    transform: scale(0.96) translateY(-5px) perspective(1000px) rotateX(2deg);
+    filter: drop-shadow(0 20px 40px rgba(145, 70, 255, 0.4));
+    transition: all 1.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+/* Pasek ładowania zapala się na biało na samej końcówce */
 body.btn-halfway .progress-overlay {
-    /* Pasek ładowania zmienia kolor na ostrzejszy */
-    background: linear-gradient(90deg, rgba(255, 70, 197, 0.8), #ff0055);
+    background: linear-gradient(90deg, rgba(145, 70, 255, 0.8), #ffffff);
+    box-shadow: 0 0 30px #ffffff;
 }
 
+/* Przycisk zaczyna lewitować i promieniować czystą energią */
 body.btn-halfway .epic-twitch-btn {
-    animation: shakeUI 0.2s infinite;
+    transform: scale(1.08) translateY(-8px);
+    box-shadow: 0 25px 80px rgba(255, 255, 255, 0.5), 0 0 40px rgba(145, 70, 255, 0.8);
+    transition: all 1.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-@keyframes shakeGrid {
-    0%, 100% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(0); }
-    25% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(-6px); }
-    50% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(6px); }
-    75% { transform: rotateX(82deg) translateY(150px) scale(2.2) translateX(-6px); }
+body.btn-halfway .epic-twitch-btn .text {
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+    transition: all 1.5s ease-out;
 }
 
-@keyframes shakeUI {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    25% { transform: translate(-2px, 2px) rotate(-0.5deg); }
-    50% { transform: translate(2px, -2px) rotate(0.5deg); }
-    75% { transform: translate(-2px, -2px) rotate(-0.5deg); }
+/* Super szybka, ale jedwabista animacja siatki */
+@keyframes godTierWarp {
+    0% { background-position: 0 0; }
+    /* Zwiększony dystans przesuwania (100px) daje iluzję potężnej prędkości bez utraty płynności */
+    100% { background-position: 0 100px; } 
 }
     </style>
 </head>
