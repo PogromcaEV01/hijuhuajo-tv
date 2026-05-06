@@ -488,7 +488,28 @@ body.btn-halfway .epic-twitch-btn .text {
     <div id="loading-screen">Trwa pobieranie bazy danych i symulowanie ramówki...</div>
     <div id="schedule-list"></div>
 </div>
+    
+<!-- Ukryty element audio -->
+<audio id="bg-music" loop>
+  <source src="sic/twoja-muzyka.mp3" type="audio/mpeg">
+  Twoja przeglądarka nie wspiera elementu audio.
+</audio>
 
+<script>
+  const audio = document.getElementById("bg-music");
+
+  // Próba autostartu
+  window.addEventListener('load', () => {
+    audio.play().catch(error => {
+      console.log("Autostart zablokowany przez przeglądarkę. Czekam na kliknięcie...");
+      
+      // Jeśli autostart nie zadziała, muzyka ruszy przy pierwszym kliknięciu w dowolnym miejscu strony
+      document.addEventListener('click', () => {
+        audio.play();
+      }, { once: true });
+    });
+  });
+</script>
 <script>
 // Generujemy ścieżki uwzględniając folder 'vm/'
 const frames = Array.from({ length: 34 }, (_, index) => `f4gW/${index + 1}.png`);
