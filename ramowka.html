@@ -59,7 +59,7 @@
             pointer-events: none;
         }
 
-        /* Reakcje tła na nowy przycisk */
+        /* REAKCJA: Hover na przycisku */
         body.btn-hovered .spotlight-overlay {
             background: radial-gradient(circle at center, transparent 0%, #000000 95%);
             box-shadow: inset 0 0 150px rgba(145, 70, 255, 0.2);
@@ -74,27 +74,24 @@
             filter: drop-shadow(0 0 10px #9146ff);
         }
 
-        body.btn-clicked {
-            animation: screenShake 0.1s linear infinite;
+        /* REAKCJA: Kliknięcie przycisku (Płynny, głęboki wjazd / Warp drive) */
+        body.btn-clicked .spotlight-overlay {
+            background: radial-gradient(circle at center, rgba(255, 70, 197, 0.15) 0%, #000000 90%);
+            box-shadow: inset 0 0 250px rgba(255, 70, 197, 0.4);
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1); /* Płynnie rozjaśnia się przez 3 sekundy */
         }
-        
+
         body.btn-clicked .cyber-grid {
-            filter: drop-shadow(0 0 30px #ff46c5) hue-rotate(45deg);
-            animation: gridWarpSpeed 0.1s linear infinite;
+            filter: drop-shadow(0 0 50px #ff46c5) hue-rotate(90deg) brightness(1.3);
+            /* Zamiast trzęsienia - kinowy, gładki zoom-in w głąb siatki 3D przez równe 3 sekundy */
+            transform: rotateX(82deg) translateY(150px) scale(2.2);
+            transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1), filter 3s ease-out;
+            animation: gridWarpSpeed 0.15s linear infinite; 
         }
 
         @keyframes gridWarpSpeed {
             0% { background-position: 0 0; }
             100% { background-position: 0 50px; }
-        }
-
-        @keyframes screenShake {
-            0% { transform: translate(2px, 1px) rotate(0deg); }
-            20% { transform: translate(-3px, -2px) rotate(-1deg); }
-            40% { transform: translate(1px, 3px) rotate(1deg); }
-            60% { transform: translate(-2px, -1px) rotate(0deg); }
-            80% { transform: translate(3px, -3px) rotate(1deg); }
-            100% { transform: translate(-1px, 2px) rotate(-1deg); }
         }
 
         /* --- GOD-TIER BUTTON (Zaadaptowany jako Back-Btn) --- */
@@ -107,7 +104,7 @@
             align-items: center;
             z-index: 100;
             transform-origin: top left;
-            transform: scale(0.65); /* Zmniejszono, by działał jako UI button */
+            transform: scale(0.65);
         }
 
         .pulse-ring {
@@ -134,7 +131,7 @@
             box-shadow: 0 10px 30px rgba(145, 70, 255, 0.3);
             cursor: pointer;
             user-select: none;
-            font-family: 'Inter', 'Segoe UI', sans-serif; /* Przycisk ma swój font */
+            font-family: 'Inter', 'Segoe UI', sans-serif;
         }
 
         .epic-twitch-btn::before {
@@ -243,7 +240,7 @@
         h1 {
             text-align: center;
             color: var(--accent);
-            margin-top: 80px; /* Zwiększono margines dla przycisku */
+            margin-top: 80px; 
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -300,7 +297,7 @@
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             transition: transform 0.2s ease-in-out;
-            position: relative; /* Żeby z-index działał prawidłowo */
+            position: relative; 
             z-index: 10;
         }
         
@@ -378,7 +375,7 @@
 
         @media (max-width: 500px) {
             .button-wrapper {
-                transform: scale(0.5); /* Mniejszy na telefonach */
+                transform: scale(0.5); 
                 top: 10px; left: 10px;
             }
             h1 {
@@ -452,7 +449,7 @@
 
     // Dotyk / Mobile
     btn.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Blokuje domyślne zachowanie przeglądarki na mobile
+        e.preventDefault();
         bdy.classList.add('btn-hovered', 'btn-clicked');
         holdTimer = setTimeout(() => { window.location.href = 'index.html'; }, 3000);
     }, {passive: false});
