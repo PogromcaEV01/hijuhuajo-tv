@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ramówka emisji</title>
     <link rel="icon" type="image/png" href="favicon2.png">
-    <!-- Dodane linki do czcionki Shadows Into Light -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap" rel="stylesheet">
@@ -26,42 +25,225 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            font-size: 18px; /* Opcjonalnie: odręczne czcionki są często mniejsze, więc warto lekko powiększyć bazowy rozmiar */
+            font-size: 18px;
+            perspective: 1000px; /* Głębia 3D dla tła */
         }
         
         .schedule-container {
             max-width: 800px;
             width: 100%;
+            z-index: 10;
         }
 
-        .back-btn {
+        /* --- EFEKTY TŁA Z VNRIKE --- */
+        .spotlight-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.05) 0%, #000000 80%);
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .cyber-grid {
+            position: fixed;
+            bottom: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(145, 70, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(145, 70, 255, 0.15) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(75deg) translateY(0);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Reakcje tła na nowy przycisk */
+        body.btn-hovered .spotlight-overlay {
+            background: radial-gradient(circle at center, transparent 0%, #000000 95%);
+            box-shadow: inset 0 0 150px rgba(145, 70, 255, 0.2);
+        }
+
+        body.btn-hovered .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(145, 70, 255, 0.8) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(145, 70, 255, 0.8) 2px, transparent 2px);
+            transform: rotateX(75deg) translateY(50px) scale(1.2);
+            animation: gridWarpSpeed 0.4s linear infinite;
+            filter: drop-shadow(0 0 10px #9146ff);
+        }
+
+        body.btn-clicked {
+            animation: screenShake 0.1s linear infinite;
+        }
+        
+        body.btn-clicked .cyber-grid {
+            filter: drop-shadow(0 0 30px #ff46c5) hue-rotate(45deg);
+            animation: gridWarpSpeed 0.1s linear infinite;
+        }
+
+        @keyframes gridWarpSpeed {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 50px; }
+        }
+
+        @keyframes screenShake {
+            0% { transform: translate(2px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, -2px) rotate(-1deg); }
+            40% { transform: translate(1px, 3px) rotate(1deg); }
+            60% { transform: translate(-2px, -1px) rotate(0deg); }
+            80% { transform: translate(3px, -3px) rotate(1deg); }
+            100% { transform: translate(-1px, 2px) rotate(-1deg); }
+        }
+
+        /* --- GOD-TIER BUTTON (Zaadaptowany jako Back-Btn) --- */
+        .button-wrapper {
             position: fixed;
             top: 20px;
             left: 20px;
-            z-index: 100;
-            display: inline-flex;
+            display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background-color: var(--card-bg);
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 8px;
-            border: 1px solid rgba(187, 134, 252, 0.3);
-            transition: all 0.2s ease-in-out;
+            z-index: 100;
+            transform-origin: top left;
+            transform: scale(0.65); /* Zmniejszono, by działał jako UI button */
         }
 
-        .back-btn:hover {
-            background-color: var(--accent);
-            color: #121212;
-            transform: scale(1.05);
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 30px;
+            box-shadow: 0 0 0 0 rgba(145, 70, 255, 0.7);
+            animation: pulsing 3s infinite cubic-bezier(0.66, 0, 0, 1);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .pulse-ring.delay { animation-delay: 1.5s; }
+
+        .epic-twitch-btn {
+            position: relative;
+            padding: 3px;
+            border-radius: 24px;
+            overflow: hidden;
+            text-decoration: none;
+            z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(145, 70, 255, 0.3);
+            cursor: pointer;
+            user-select: none;
+            font-family: 'Inter', 'Segoe UI', sans-serif; /* Przycisk ma swój font */
+        }
+
+        .epic-twitch-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%; width: 150%; height: 300%;
+            background: conic-gradient(from 0deg, transparent 0%, transparent 60%, #ff46c5 80%, #ffffff 100%);
+            transform: translate(-50%, -50%);
+            animation: spin 2.5s linear infinite;
+            z-index: -2;
+        }
+
+        .btn-content {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 30px;
+            background: linear-gradient(145deg, #18181b, #2a114f);
+            border-radius: 21px;
+            z-index: -1;
+            box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .btn-content::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.8) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 0;
+        }
+
+        .progress-overlay {
+            position: absolute;
+            top: 0; left: 0; height: 100%; width: 0%;
+            background: linear-gradient(90deg, rgba(145, 70, 255, 0.6), rgba(255, 70, 197, 0.8));
+            z-index: 1;
+            transition: width 0.3s ease-out;
+        }
+
+        body.btn-clicked .progress-overlay {
+            width: 100%;
+            transition: width 3s linear;
+        }
+
+        .epic-twitch-btn svg {
+            position: relative;
+            width: 28px;
+            height: 28px;
+            stroke: #ffffff;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2;
+        }
+
+        .epic-twitch-btn .text {
+            position: relative;
+            font-size: 1.3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: transparent;
+            z-index: 2;
+            background: linear-gradient(90deg, #ffffff 0%, #b785ff 50%, #ffffff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            transition: all 0.3s ease;
+        }
+
+        .sparks {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 3;
         }
         
+        .sparks::before, .sparks::after {
+            content: ''; position: absolute; width: 4px; height: 4px;
+            background: #fff; border-radius: 50%; opacity: 0;
+            box-shadow: 0 0 8px 2px #ff46c5; transition: opacity 0.3s;
+        }
+
+        .epic-twitch-btn:hover {
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 15px 50px rgba(145, 70, 255, 0.8);
+        }
+
+        .epic-twitch-btn:hover .btn-content::before { opacity: 1; }
+        .epic-twitch-btn:hover .text { animation: textShimmer 2s linear infinite; filter: drop-shadow(0 0 8px rgba(183, 133, 255, 0.8)); }
+        .epic-twitch-btn:hover svg { transform: scale(1.2) translateX(-5px); stroke: #b785ff; }
+        .epic-twitch-btn:hover .sparks::before { animation: flyUpLeft 1s ease-out infinite; }
+        .epic-twitch-btn:hover .sparks::after { animation: flyUpRight 1.2s ease-out infinite 0.3s; }
+        .epic-twitch-btn:active { transform: translateY(2px) scale(0.95); }
+
+        @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes pulsing { 0% { box-shadow: 0 0 0 0 rgba(145, 70, 255, 0.6); } 70% { box-shadow: 0 0 0 30px rgba(145, 70, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(145, 70, 255, 0); } }
+        @keyframes textShimmer { to { background-position: 200% center; } }
+        @keyframes flyUpLeft { 0% { transform: translate(20px, 40px) scale(1); opacity: 1; } 100% { transform: translate(-30px, -40px) scale(0); opacity: 0; } }
+        @keyframes flyUpRight { 0% { transform: translate(180px, 40px) scale(1); opacity: 1; } 100% { transform: translate(230px, -30px) scale(0); opacity: 0; } }
+
+        /* --- POZOSTAŁE STYLE RAMÓWKI --- */
         h1 {
             text-align: center;
             color: var(--accent);
-            margin-top: 60px;
+            margin-top: 80px; /* Zwiększono margines dla przycisku */
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -99,7 +281,6 @@
             cursor: pointer;
         }
 
-        /* Ekran ładowania */
         #loading-screen {
             text-align: center;
             padding: 40px;
@@ -119,6 +300,8 @@
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             transition: transform 0.2s ease-in-out;
+            position: relative; /* Żeby z-index działał prawidłowo */
+            z-index: 10;
         }
         
         .schedule-item:hover {
@@ -194,12 +377,12 @@
         }
 
         @media (max-width: 500px) {
-            .back-btn {
-                padding: 8px 15px;
-                font-size: 0.9rem;
+            .button-wrapper {
+                transform: scale(0.5); /* Mniejszy na telefonach */
+                top: 10px; left: 10px;
             }
             h1 {
-                margin-top: 50px;
+                margin-top: 60px;
                 font-size: 1.5rem;
             }
             .time-block {
@@ -212,13 +395,26 @@
 </head>
 <body>
 
-    <a href="index.html" class="back-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        wróć do tv
-    </a>
+    <div class="cyber-grid"></div>
+    <div class="spotlight-overlay"></div>
+
+    <div class="button-wrapper">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring delay"></div>
+
+        <a class="epic-twitch-btn" id="godTierBtn">
+            <div class="btn-content">
+                <div class="progress-overlay"></div>
+                
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span class="text">Wróć do TV</span>
+            </div>
+            <div class="sparks"></div>
+        </a>
+    </div>
 
 <div class="schedule-container">
     <h1>𓇢𓆸 🍡૮₍ ˃ ⤙ ˂ ₎ა  °‧ 𓆝 𓆟 𓆞 ·｡  (ᴗ˳ᴗ)ᶻ𝗓𐰁 ☕︎✧₊⁺🕯⋆.˚୨ৎ  /•᷅‎‎•᷄\੭ 𓂃🪶</h1>
@@ -233,6 +429,41 @@
 </div>
 
 <script>
+    // --- OBSŁUGA GOD-TIER BUTTONA ---
+    const btn = document.getElementById('godTierBtn');
+    const bdy = document.body;
+    let holdTimer; 
+
+    // Myszka / Desktop
+    btn.addEventListener('mouseenter', () => { bdy.classList.add('btn-hovered'); });
+    btn.addEventListener('mouseleave', () => {
+        bdy.classList.remove('btn-hovered');
+        bdy.classList.remove('btn-clicked');
+        clearTimeout(holdTimer); 
+    });
+    btn.addEventListener('mousedown', () => {
+        bdy.classList.add('btn-clicked');
+        holdTimer = setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+    });
+    btn.addEventListener('mouseup', () => {
+        bdy.classList.remove('btn-clicked');
+        clearTimeout(holdTimer); 
+    });
+
+    // Dotyk / Mobile
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Blokuje domyślne zachowanie przeglądarki na mobile
+        bdy.classList.add('btn-hovered', 'btn-clicked');
+        holdTimer = setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+    }, {passive: false});
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        bdy.classList.remove('btn-hovered', 'btn-clicked');
+        clearTimeout(holdTimer);
+    }, {passive: false});
+
+
+    // --- GŁÓWNA LOGIKA RAMÓWKI ---
     let scheduleConfig = [];
     let videosDB = {};
 
@@ -240,7 +471,6 @@
     const dateInput = document.getElementById('schedule-date');
     const loadingScreen = document.getElementById('loading-screen');
 
-    // --- ŁADOWANIE PLIKU CSV (skopiowane z index.html) ---
     async function loadCSV() {
         const res = await fetch("anime_lista.csv");
         const text = await res.text();
@@ -277,7 +507,6 @@
         return db;
     }
 
-    // --- OBLICZANIE BLOKÓW (skopiowane z index.html) ---
     function getBlockEnd(startTimeSec, durationSec) {
         const endTimeSec = startTimeSec + durationSec;
         const startHour = Math.floor(startTimeSec / 3600);
@@ -295,7 +524,6 @@
         }
     }
 
-        // --- LOGIKA SYMULACJI CAŁEGO DNIA ---
     function simulateFullDay(targetCycleDay) {
         let t = 0; 
         let series_state = {};
@@ -303,7 +531,7 @@
             series_state[f] = { next_ep_idx: 0, finished: false };
         }
 
-        const max_t = targetCycleDay * 86400; // Symulujemy tylko do końca zadanego dnia
+        const max_t = targetCycleDay * 86400; 
         let events_for_day = {}; 
 
         while (t < max_t) {
@@ -373,18 +601,14 @@
                 let duration = ep_info.durationSec;
                 let start_t = advanced_t;
                 let block_end_t = getBlockEnd(start_t, duration);
-                      // --- DODANA LOGIKA: Blokowanie czasu antenowego ---
-      // Jeśli to ostatni odcinek w kolejce i seria się kończy LUB wygenerowano tylko jeden odcinek (start serii)
-      if (ep === eps_to_play[eps_to_play.length - 1] && (state.finished || eps_to_play.length === 1)) {
-        let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-        // Wymuś rozciągnięcie bloku do pełnej godziny (resztę wypełni ambient)
-        if (block_end_t < next_hour_t) {
-          block_end_t = next_hour_t;
-        }
-      }
-                // ---------------------------------------------
 
-                // Zapisujemy odcinek jeśli wypadł w poszukiwanym dniu
+                if (ep === eps_to_play[eps_to_play.length - 1] && (state.finished || eps_to_play.length === 1)) {
+                    let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
+                    if (block_end_t < next_hour_t) {
+                        block_end_t = next_hour_t;
+                    }
+                }
+
                 if (day === targetCycleDay) {
                     if (!events_for_day[hour]) {
                         events_for_day[hour] = {
@@ -412,7 +636,6 @@
         return events_for_day;
     }
     
-
     function formatTime(hour) {
         return `${hour.toString().padStart(2, '0')}:00`;
     }
@@ -424,17 +647,14 @@
         const targetDate = new Date(year, month - 1, day);
         targetDate.setHours(0,0,0,0);
         
-        // Obliczanie cyklu tak jak w TV
         const localEpochMs = targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000);
         const cycleDay = (Math.floor(localEpochMs / 86400000) % 182) + 1;
         const currentDOW = ((cycleDay - 1) % 7) + 1; 
 
-        // Odpalamy symulację
         const dailyEvents = simulateFullDay(cycleDay);
 
-        // Renderowanie kafelków
         for(let hour = 0; hour < 24; hour++) {
-            if (!dailyEvents[hour]) continue; // Pusta godzina (ambient) - pomijamy
+            if (!dailyEvents[hour]) continue; 
 
             const block = dailyEvents[hour];
             const el = document.createElement('div');
@@ -442,14 +662,12 @@
             
             const timeHTML = `<div class="time-block">${formatTime(hour)}</div>`;
             
-            // Grupowanie HTML odcinków wewnątrz folderu (dla estetyki)
             let playingHTML = '';
-            
-            // Proste grupowanie odcinków występujących jeden pod drugim
             let currentFolder = null;
+
             block.episodes.forEach((ep) => {
                 if (ep.folder !== currentFolder) {
-                    if (currentFolder !== null) playingHTML += `</div>`; // zamknij poprzedni
+                    if (currentFolder !== null) playingHTML += `</div>`; 
                     currentFolder = ep.folder;
                     playingHTML += `
                         <div class="ep-info">
@@ -457,7 +675,6 @@
                     `;
                 }
                 
-                // Przeliczanie sekund na minuty
                 const durationMin = Math.round(ep.durationSec / 60);
 
                 playingHTML += `
@@ -467,7 +684,7 @@
                     </span>
                 `;
             });
-            if (currentFolder !== null) playingHTML += `</div>`; // zamknij ostatni folder
+            if (currentFolder !== null) playingHTML += `</div>`;
             
             const contentHTML = `
                 <div class="content-block">
@@ -484,7 +701,6 @@
             scheduleList.innerHTML = `<div style="text-align:center; padding: 20px;">Brak danych do wyświetlenia (pusty dzień).</div>`;
         }
 
-        // Debug info tak jak poprzednio
         const infoDiv = document.createElement('div');
         infoDiv.style.textAlign = 'center';
         infoDiv.style.color = '#555';
@@ -494,15 +710,12 @@
         scheduleList.appendChild(infoDiv);
     }
 
-    // --- INICJALIZACJA ---
     async function init() {
         try {
-            // 1. Pobranie danych json i csv
             const resSchedule = await fetch("ramowka.json");
             scheduleConfig = await resSchedule.json();
             videosDB = await loadCSV();
 
-            // 2. Ustawienie dzisiejszej daty na wejściu i odblokowanie kalendarza
             const today = new Date();
             const localIsoDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
             dateInput.value = localIsoDate;
@@ -510,10 +723,8 @@
             
             loadingScreen.style.display = 'none';
 
-            // 3. Pierwszy render
             renderSchedule(dateInput.value);
 
-            // 4. Podpięcie nasłuchiwania zmian
             dateInput.addEventListener('change', (e) => {
                 if (e.target.value) renderSchedule(e.target.value);
             });
@@ -525,7 +736,6 @@
         }
     }
 
-    // Uruchom start skryptu
     init();
 </script>
 </body>
