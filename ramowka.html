@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ramówka emisji</title>
-    <link rel="icon" type="image/png" href="favicon2.png">
+    <link id="favicon" rel="icon" type="image/png" href="1.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap" rel="stylesheet">
@@ -489,6 +489,20 @@ body.btn-halfway .epic-twitch-btn .text {
 </div>
 
 <script>
+    // Automatyczne generowanie listy 300 plików
+const frames = Array.from({ length: 34 }, (_, index) => `${index + 1}.png`);
+
+let i = 0;
+const favicon = document.getElementById("favicon");
+
+setInterval(() => {
+  // Podmieniamy href na kolejną nazwę z tablicy
+  favicon.href = frames[i];
+  
+  // Zwiększamy licznik i resetujemy go po osiągnięciu 300
+  i = (i + 1) % frames.length;
+}, 300);
+    
     // --- OBSŁUGA GOD-TIER BUTTONA ---
     const btn = document.getElementById('godTierBtn');
     const bdy = document.body;
