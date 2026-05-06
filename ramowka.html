@@ -290,7 +290,7 @@
         }
     }
 
-    // --- LOGIKA SYMULACJI CAŁEGO DNIA ---
+        // --- LOGIKA SYMULACJI CAŁEGO DNIA ---
     function simulateFullDay(targetCycleDay) {
         let t = 0; 
         let series_state = {};
@@ -369,6 +369,17 @@
                 let start_t = advanced_t;
                 let block_end_t = getBlockEnd(start_t, duration);
 
+                // --- DODANA LOGIKA Z INDEXU: Blokowanie nowej serii ---
+                // Jeśli to ostatni włączany odcinek i seria właśnie otrzymała status "finished"
+                if (ep === eps_to_play[eps_to_play.length - 1] && state.finished) {
+                    let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
+                    // Wymuś rozciągnięcie bloku do pełnej godziny (jeśli skończył się wcześniej)
+                    if (block_end_t < next_hour_t) {
+                        block_end_t = next_hour_t;
+                    }
+                }
+                // ---------------------------------------------
+
                 // Zapisujemy odcinek jeśli wypadł w poszukiwanym dniu
                 if (day === targetCycleDay) {
                     if (!events_for_day[hour]) {
@@ -381,8 +392,7 @@
                         folder: f,
                         file: ep_info.file,
                         type: ep.type,
-                        idx: ep.idx,
-                        durationSec: duration // Przekazanie czasu trwania
+                        idx: ep.idx
                     });
                 }
                 advanced_t = block_end_t;
@@ -397,6 +407,7 @@
 
         return events_for_day;
     }
+    
 
     function formatTime(hour) {
         return `${hour.toString().padStart(2, '0')}:00`;
