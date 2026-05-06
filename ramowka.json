@@ -1,7 +1,7 @@
 [
   {
     "hour": 0,
-    "folders": ["Cyberpunk Edgerunners [Tenrai-Sensei]", "1a. OVA - B.C. 2033 (1987-91)"],
+    "folders": ["cyberpunk edgerunners", "1a. OVA - B.C. 2033 (1987-91)"],
     "title": "nocny cyberpunk i sci-fi (codziennie)"
   },
   {
@@ -16,142 +16,135 @@
   },
   {
     "hour": 3,
-    "folders": ["2c. OVA - Parasite Dolls (2003)", "Iria Zeiram [sxales]"],
+    "folders": ["2c. OVA - Parasite Dolls (2003)", "iria zeiram"],
     "title": "mroczne sci-fi i akcja (codziennie)"
   },
   {
     "hour": 4,
-    "folders": ["Terror in Resonance [Tenrai-Sensei]", "Death Note - 01 ~ 21 [Erai-raws]"],
+    "folders": ["terror in resonance", "death note"],
     "title": "nocne thrillery (codziennie)"
   },
   {
     "hour": 5,
-    "folders": ["Mononoke Hime", "JUUBEE NINPUUCHOU"],
+    "folders": ["mononoke hime", "juubee ninpuuchou"],
     "title": "poranne kino akcji i fantasy (codziennie)"
   },
   {
     "hour": 6,
     "days": [1, 2, 3, 4, 5],
-    "folders": ["azumanga", "lucky star"],
+    "folders": ["azumanga daioh", "lucky star"],
     "title": "poranek z klasyczną komedią (pon-pt)"
   },
   {
     "hour": 6,
     "days": [6, 7],
-    "folders": ["flying witch", "Shikanoko Nokonoko Koshitantan"],
+    "folders": ["flying witch", "shikanoko nokonoko koshitantan"],
     "title": "weekendowy, magiczny absurd (sob-nie)"
   },
   {
     "hour": 7,
-    "folders": ["[F-R] One Piece 0001-0782 [F-R]", "Bleach"],
+    "folders": ["one piece", "bleach"],
     "title": "śniadanie z shounenami (codziennie)"
   },
   {
     "hour": 8,
-    "folders": ["Arte [Tenrai-Sensei]", "Gekkan Shoujo Nozaki-kun"],
+    "folders": ["arte", "gekkan shoujo nozaki-kun"],
     "title": "poranek ze sztuką i humorem (codziennie)"
   },
   {
     "hour": 9,
     "days": [1, 2, 3, 4, 5],
-    "folders": ["Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]", "Blue Box [Tenrai-Sensei]"],
+    "folders": ["alya sometimes hides her feelings in russian", "blue box"],
     "title": "szkolne romanse i sport (pon-pt)"
   },
   {
     "hour": 9,
     "days": [6, 7],
-    "folders": ["azumanga", "lucky star"],
-    "title": "weekendowa klasyczna komedia (sob-nie)"
+    "folders": ["ijiranaide, nagatoro-san", "grand blue"],
+    "title": "weekendowe zaloty (sob-nie)"
   },
   {
     "hour": 10,
-    "folders": ["Youkoso_Jitsuryoku_Shijou_Shugi_no_Kyoushitsu", "Wistoria - Wand and Sword [Tenrai-Sensei]"],
+    "folders": ["youkoso jitsuryoku shijou shugi no kyoushitsu", "wistoria - wand and sword"],
     "title": "klasa elity i magia (codziennie)"
   },
   {
     "hour": 11,
-    "folders": ["[HorribleSubs] Lupin III Part I (01-23)", "[HorribleSubs] Lupin III Part II (01-155)"],
+    "folders": ["lupin III part I", "lupin III part II"],
     "title": "przedpołudnie z lupinem (codziennie)"
   },
   {
     "hour": 12,
-    "folders": ["Lupin III Part III (01-50) [HorribleSubs]", "Seihou Bukyou Outlaw Star"],
+    "folders": ["lupin III part III", "cowboy bebop s01"],
     "title": "kosmiczni kowboje i złodzieje (codziennie)"
   },
   {
     "hour": 13,
-    "folders": ["Frieren꞉ Beyond Journey's End [Tenrai-Sensei]", "Delicious in Dungeon [Tenrai-Sensei]"],
+    "folders": ["frieren꞉ beyond journey's end", "delicious in dungeon"],
     "title": "wyprawa w nieznane (codziennie)"
   },
   {
     "hour": 14,
-    "folders": ["Chillin' In My 30S... [Tenrai-Sensei]", "The Wrong Way To Use Healing Magic [Tenrai-Sensei]"],
+    "folders": ["chillin' In my 30S", "the wrong way to use healing magic"],
     "title": "isekaiowe popołudnie (codziennie)"
   },
   {
     "hour": 15,
-    "folders": ["grand blue s1", "initial D"],
-    "title": "popołudniowy chillout i drift (codziennie)"
+    "folders": ["initial D"],
+    "title": "popołudniowy drift (codziennie)"
   },
   {
     "hour": 16,
     "days": [1, 2, 3, 4, 5],
-    "folders": ["flying witch", "Shikanoko Nokonoko Koshitantan"],
-    "title": "popołudniowy absurd (pon-pt)"
+    "folders": ["zombieland saga s01", "zombieland saga s02"],
+    "title": "popołudniowy relaks z zombie (pon-pt)"
   },
   {
     "hour": 16,
     "days": [6, 7],
-    "folders": ["Zombieland Saga S01 EMBER", "Zombieland Saga S02 EMBER"],
-    "title": "zombiakowe popołudnie (sob-nie)"
+    "folders": ["seihou bukyou outlaw star", "inne"],
+    "title": "kosmiczne kowbojstwo i inne (sob-nie)"
   },
   {
     "hour": 17,
-    "folders": ["Season 1", "Special"],
-    "title": "popołudniowe niespodzianki (codziennie)"
-  },
-  {
-    "hour": 18,
-    "folders": ["[Dodgy] Star Ocean EX", "[Dodgy] Shrine of the Morning Mist"],
+    "folders": ["star ocean EX", "shrine of the morning mist"],
     "title": "wieczór z klasyką anime (codziennie)"
   },
   {
-    "hour": 19,
-    "folders": ["Demon Lord 2099 [Tenrai-Sensei]", "re zero"],
-    "title": "wieczór w innym świecie (codziennie)"
+    "hour": 18,
+    "folders": ["demon lord 2099", "re zero"],
+    "title": "magiczne popołudnie (codziennie)"
   },
   {
-    "hour": 20,
+    "hour": 19,
     "days": [1, 2, 3, 4, 5],
-    "folders": ["aot s1 25 odcinków_small", "Chainsaw man"],
+    "folders": ["attack on titan", "chainsaw man"],
     "title": "prime time: tytani i demony (pon-pt)"
   },
   {
-    "hour": 20,
+    "hour": 19,
     "days": [6, 7],
-    "folders": ["Alya Sometimes Hides Her Feelings in Russian [Tenrai-Sensei]", "Blue Box [Tenrai-Sensei]"],
-    "title": "prime time: szkolne perypetie (sob-nie)"
+    "folders": ["high school DxD", "high school of the dead"],
+    "title": "prime time: demony i akcja (sob-nie)"
+  },
+  {
+    "hour": 20,
+    "folders": ["linck click s01"],
+    "title": "wieczór z podróżami w czasie część 1 (codziennie)"
   },
   {
     "hour": 21,
-    "folders": ["Link Click season 1", "Link Click season 2"],
-    "title": "wieczór z podróżami w czasie (codziennie)"
+    "folders": ["link click s02"],
+    "title": "wieczór z podróżami w czasie część 2 (codziennie)"
   },
   {
     "hour": 22,
-    "days": [1, 2, 3, 4, 5],
-    "folders": ["Zombieland Saga S01 EMBER", "Zombieland Saga S02 EMBER"],
-    "title": "zombiakowy wieczór muzyczny (pon-pt)"
-  },
-  {
-    "hour": 22,
-    "days": [6, 7],
-    "folders": ["aot s1 25 odcinków_small", "Chainsaw man"],
-    "title": "nocna, mroczna akcja (sob-nie)"
+    "folders": ["gushing over magical girls"],
+    "title": "nocne pikanterie (codziennie)"
   },
   {
     "hour": 23,
-    "folders": ["High school of the dead", "Gushing Over Magical Girls [Tenrai-Sensei]"],
-    "title": "nocne pikanterie i przetrwanie (codziennie)"
+    "folders": ["cowboy bebop specials"],
+    "title": "noc z kowbojami (codziennie)"
   }
 ]
