@@ -566,7 +566,16 @@ function simulateUpTo(target_t, currentCycleDay) {
       let start_t = advanced_t;
       let end_t = start_t + duration;
       let block_end_t = getBlockEnd(start_t, duration);
-
+       // --- DODANA LOGIKA: Blokowanie nowej serii ---
+      // Jeśli to ostatni włączany odcinek i seria właśnie otrzymała status "finished"
+      if (ep === eps_to_play[eps_to_play.length - 1] && state.finished) {
+        let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
+        // Wymuś rozciągnięcie bloku do pełnej godziny (jeśli skończył się wcześniej)
+        if (block_end_t < next_hour_t) {
+          block_end_t = next_hour_t;
+        }
+      }
+      // ---------------------------------------------
       if (target_t >= start_t && target_t < block_end_t) {
         if (target_t < end_t) {
           current_playback = {
