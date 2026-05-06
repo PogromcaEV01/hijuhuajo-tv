@@ -1,22 +1,22 @@
 [
   {
     "hour": 0,
-    "folders": ["cyberpunk edgerunners", "1a. OVA - B.C. 2033 (1987-91)"],
+    "folders": ["cyberpunk edgerunners", "bubblegum crisis/1a. OVA - B.C. 2033 (1987-91)"],
     "title": "nocny cyberpunk i sci-fi (codziennie)"
   },
   {
     "hour": 1,
-    "folders": ["1b. OVA - Bubblegum CRASH (1991)", "1c. Series - B.C. TOKYO 2040 (1998-99)"],
+    "folders": ["bubblegum crisis/1b. OVA - Bubblegum CRASH (1991)", "bubblegum crisis/1c. Series - B.C. TOKYO 2040 (1998-99)"],
     "title": "cyberpunkowe kontynuacje (codziennie)"
   },
   {
     "hour": 2,
-    "folders": ["2a. OVA - A.D. Police Files (1990)", "2b. Series - A.D.P, To Protect and Serve (1999)"],
+    "folders": ["bubblegum crisis/2a. OVA - A.D. Police Files (1990)", "bubblegum crisis/2b. Series - A.D.P, To Protect and Serve (1999)"],
     "title": "policja przyszłości (codziennie)"
   },
   {
     "hour": 3,
-    "folders": ["2c. OVA - Parasite Dolls (2003)", "iria zeiram"],
+    "folders": ["bubblegum crisis/2c. OVA - Parasite Dolls (2003)", "iria zeiram"],
     "title": "mroczne sci-fi i akcja (codziennie)"
   },
   {
@@ -26,7 +26,7 @@
   },
   {
     "hour": 5,
-    "folders": ["mononoke hime", "juubee ninpuuchou"],
+    "folders": ["filmy/mononoke hime", "filmy/juubee ninpuuchou"],
     "title": "poranne kino akcji i fantasy (codziennie)"
   },
   {
@@ -75,7 +75,7 @@
   },
   {
     "hour": 12,
-    "folders": ["lupin III part III", "cowboy bebop s01"],
+    "folders": ["lupin III part III", "cowboy bebop/cowboy bebop s01"],
     "title": "kosmiczni kowboje i złodzieje (codziennie)"
   },
   {
@@ -96,7 +96,7 @@
   {
     "hour": 16,
     "days": [1, 2, 3, 4, 5],
-    "folders": ["zombieland saga s01", "zombieland saga s02"],
+    "folders": ["zombieland saga/zombieland saga s01", "zombieland saga/zombieland saga s02"],
     "title": "popołudniowy relaks z zombie (pon-pt)"
   },
   {
@@ -129,12 +129,12 @@
   },
   {
     "hour": 20,
-    "folders": ["linck click s01"],
+    "folders": ["link click/linck click s01"],
     "title": "wieczór z podróżami w czasie część 1 (codziennie)"
   },
   {
     "hour": 21,
-    "folders": ["link click s02"],
+    "folders": ["link click/link click s02"],
     "title": "wieczór z podróżami w czasie część 2 (codziennie)"
   },
   {
@@ -144,7 +144,7 @@
   },
   {
     "hour": 23,
-    "folders": ["cowboy bebop specials"],
+    "folders": ["cowboy bebop/cowboy bebop specials"],
     "title": "noc z kowbojami (codziennie)"
   }
 ]
