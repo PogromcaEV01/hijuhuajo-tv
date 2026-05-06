@@ -583,26 +583,7 @@ function simulateUpTo(target_t, currentCycleDay) {
     }
 
     if (advanced_t > t) {
-      // Wyliczamy do jakiej pełnej godziny przypisana jest ta iteracja (np. 14:00)
-      let base_hour_sec = Math.floor(t / 3600) * 3600;
-      let next_hour_sec = base_hour_sec + 3600;
-
-      // Sprawdzamy, czy odcinek "wylał się" na czas należący do KOLEJNEJ godziny
-      // i czy nie zamknął się idealnie o równej (np. skończył o 15:30)
-      if (advanced_t > next_hour_sec && advanced_t % 3600 !== 0) {
-        
-        let next_full_hour = Math.ceil(advanced_t / 3600) * 3600;
-        
-        if (target_t >= advanced_t && target_t < next_full_hour) {
-          current_playback = { type: 'ambient', offsetSec: target_t - advanced_t };
-        }
-        t = next_full_hour; // Zamrożenie skradzionej godziny i skok do kolejnej pełnej (np. 16:00)
-        
-      } else {
-        // Jeśli odcinek skończył się normalnie wewnątrz swojej godziny (np. 14:30)
-        t = advanced_t; 
-      }
-      
+      t = advanced_t; 
     } else {
       t = Math.floor(t / 3600) * 3600 + 3600; 
     }
@@ -674,12 +655,12 @@ function sync() {
 
     const typeLabel = playback.isRerun ? 'powtórka' : 'nowy';
     document.getElementById("info").innerText =
-      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.configTitle} | odc. ${playback.episodeIndex}`;
+      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${playback.configTitle} | odc. ${playback.episodeIndex} (${typeLabel})`;
 
   } else if (playback.type === 'ambient') {
     playAmbient(playback.offsetSec);
     document.getElementById("info").innerText =
-      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} |`;
+      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} | Przerwa`;
   }
 }
 
@@ -687,3 +668,4 @@ startTV();
 </script>
 </body>
 </html>
+```[cite: 1]
