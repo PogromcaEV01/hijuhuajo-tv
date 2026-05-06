@@ -94,6 +94,7 @@
             cursor: pointer;
         }
 
+        /* Ekran ładowania */
         #loading-screen {
             text-align: center;
             padding: 40px;
@@ -146,10 +147,6 @@
             font-weight: bold;
             margin: 0 0 12px 0;
             color: #ffffff;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
         }
         
         .folders {
@@ -177,29 +174,10 @@
             margin-bottom: 6px;
         }
 
-        .badge {
-            font-size: 0.7rem;
-            padding: 3px 6px;
-            border-radius: 4px;
-            color: #fff;
-            letter-spacing: 0.5px;
-            font-weight: bold;
-        }
-        .badge.rerun { background-color: #d32f2f; }
-        .badge.premiere { background-color: #388e3c; }
-        
-        /* Nowe style badge'ów */
-        .badge.domino { background-color: #e64a19; }
-        .badge.duration { background-color: #1976d2; }
-        .badge.skipped-badge { background-color: #b71c1c; border: 1px solid #ff5252;}
-
         .ep-name {
             color: #cfcfcf;
             font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
+            display: block;
             margin-left: 10px;
             margin-bottom: 4px;
         }
@@ -208,11 +186,6 @@
             content: "▶ ";
             color: var(--accent);
             font-size: 0.8rem;
-        }
-        
-        .ep-name.skipped {
-            text-decoration: line-through;
-            opacity: 0.5;
         }
 
         @media (max-width: 500px) {
@@ -262,6 +235,7 @@
     const dateInput = document.getElementById('schedule-date');
     const loadingScreen = document.getElementById('loading-screen');
 
+    // --- ŁADOWANIE PLIKU CSV (skopiowane z index.html) ---
     async function loadCSV() {
         const res = await fetch("anime_lista.csv");
         const text = await res.text();
@@ -298,6 +272,7 @@
         return db;
     }
 
+    // --- OBLICZANIE BLOKÓW (skopiowane z index.html) ---
     function getBlockEnd(startTimeSec, durationSec) {
         const endTimeSec = startTimeSec + durationSec;
         const startHour = Math.floor(startTimeSec / 3600);
@@ -315,6 +290,7 @@
         }
     }
 
+    // --- LOGIKA SYMULACJI CAŁEGO DNIA ---
     function simulateFullDay(targetCycleDay) {
         let t = 0; 
         let series_state = {};
@@ -322,7 +298,7 @@
             series_state[f] = { next_ep_idx: 0, finished: false };
         }
 
-        const max_t = targetCycleDay * 86400; 
+        const max_t = targetCycleDay * 86400; // Symulujemy tylko do końca zadanego dnia
         let events_for_day = {}; 
 
         while (t < max_t) {
@@ -387,30 +363,18 @@
                 }
             }
 
-            // Obliczanie opóźnienia względem zaplanowanej godziny bloku (EFEKT DOMINA)
-            let scheduled_start = ((day - 1) * 86400) + (hour * 3600);
-            let block_delay_sec = Math.max(0, t - scheduled_start);
-
             for (let ep of eps_to_play) {
                 let ep_info = db[ep.idx];
                 let duration = ep_info.durationSec;
                 let start_t = advanced_t;
                 let block_end_t = getBlockEnd(start_t, duration);
-                
-                let day_end_t = day * 86400;
-                let skipped = false;
 
-                // Odcinek wylatuje z dzisiejszej ramówki, ponieważ z powodu opóźnień zacząłby się po 24:00
-                if (start_t >= day_end_t) {
-                    skipped = true;
-                }
-
+                // Zapisujemy odcinek jeśli wypadł w poszukiwanym dniu
                 if (day === targetCycleDay) {
                     if (!events_for_day[hour]) {
                         events_for_day[hour] = {
                             title: config.title || f,
-                            episodes: [],
-                            delay_sec: block_delay_sec // Zapisanie opóźnienia bloku
+                            episodes: []
                         };
                     }
                     events_for_day[hour].episodes.push({
@@ -418,8 +382,7 @@
                         file: ep_info.file,
                         type: ep.type,
                         idx: ep.idx,
-                        durationSec: duration,
-                        skipped: skipped
+                        durationSec: duration // Przekazanie czasu trwania
                     });
                 }
                 advanced_t = block_end_t;
@@ -446,14 +409,17 @@
         const targetDate = new Date(year, month - 1, day);
         targetDate.setHours(0,0,0,0);
         
+        // Obliczanie cyklu tak jak w TV
         const localEpochMs = targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000);
         const cycleDay = (Math.floor(localEpochMs / 86400000) % 182) + 1;
         const currentDOW = ((cycleDay - 1) % 7) + 1; 
 
+        // Odpalamy symulację
         const dailyEvents = simulateFullDay(cycleDay);
 
+        // Renderowanie kafelków
         for(let hour = 0; hour < 24; hour++) {
-            if (!dailyEvents[hour]) continue;
+            if (!dailyEvents[hour]) continue; // Pusta godzina (ambient) - pomijamy
 
             const block = dailyEvents[hour];
             const el = document.createElement('div');
@@ -461,12 +427,14 @@
             
             const timeHTML = `<div class="time-block">${formatTime(hour)}</div>`;
             
+            // Grupowanie HTML odcinków wewnątrz folderu (dla estetyki)
             let playingHTML = '';
-            let currentFolder = null;
             
+            // Proste grupowanie odcinków występujących jeden pod drugim
+            let currentFolder = null;
             block.episodes.forEach((ep) => {
                 if (ep.folder !== currentFolder) {
-                    if (currentFolder !== null) playingHTML += `</div>`;
+                    if (currentFolder !== null) playingHTML += `</div>`; // zamknij poprzedni
                     currentFolder = ep.folder;
                     playingHTML += `
                         <div class="ep-info">
@@ -474,41 +442,21 @@
                     `;
                 }
                 
-                const badgeLabel = ep.type === 'rerun' ? 'POWTÓRKA' : 'NOWY';
-                const badgeClass = ep.type === 'rerun' ? 'rerun' : 'premiere';
-                
-                // Czas trwania > 30 minut
-                const durationBadge = ep.durationSec > 1800 
-                    ? `<span class="badge duration">⏱️ ${Math.floor(ep.durationSec / 60)} min</span>` 
-                    : '';
-                
-                // Informacja o usunięciu
-                const skippedBadge = ep.skipped 
-                    ? `<span class="badge skipped-badge">❌ USUNIĘTO (koniec dnia)</span>` 
-                    : '';
-                
-                // Klasa dla przekreślenia
-                const epStateClass = ep.skipped ? 'skipped' : '';
+                // Przeliczanie sekund na minuty
+                const durationMin = Math.round(ep.durationSec / 60);
 
                 playingHTML += `
-                    <span class="ep-name ${epStateClass}">
+                    <span class="ep-name">
                         odc. ${ep.idx + 1} - ${ep.file} 
-                        <span class="badge ${badgeClass}">${badgeLabel}</span>
-                        ${durationBadge}
-                        ${skippedBadge}
+                        <span style="color: #999; font-size: 0.85rem; font-weight: normal; margin-left: 5px;">(${durationMin} min)</span>
                     </span>
                 `;
             });
-            if (currentFolder !== null) playingHTML += `</div>`;
-            
-            // Plakietka opóźnienia na poziomie bloku
-            const blockDelayBadge = block.delay_sec > 0 
-                ? `<span class="badge domino">⚠️ EFEKT DOMINA: +${Math.floor(block.delay_sec / 60)} min</span>` 
-                : '';
+            if (currentFolder !== null) playingHTML += `</div>`; // zamknij ostatni folder
             
             const contentHTML = `
                 <div class="content-block">
-                    <h3 class="title">${block.title} ${blockDelayBadge}</h3>
+                    <h3 class="title">${block.title}</h3>
                     <div class="folders">${playingHTML}</div>
                 </div>
             `;
@@ -521,6 +469,7 @@
             scheduleList.innerHTML = `<div style="text-align:center; padding: 20px;">Brak danych do wyświetlenia (pusty dzień).</div>`;
         }
 
+        // Debug info tak jak poprzednio
         const infoDiv = document.createElement('div');
         infoDiv.style.textAlign = 'center';
         infoDiv.style.color = '#555';
@@ -530,12 +479,15 @@
         scheduleList.appendChild(infoDiv);
     }
 
+    // --- INICJALIZACJA ---
     async function init() {
         try {
+            // 1. Pobranie danych json i csv
             const resSchedule = await fetch("ramowka.json");
             scheduleConfig = await resSchedule.json();
             videosDB = await loadCSV();
 
+            // 2. Ustawienie dzisiejszej daty na wejściu i odblokowanie kalendarza
             const today = new Date();
             const localIsoDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
             dateInput.value = localIsoDate;
@@ -543,8 +495,10 @@
             
             loadingScreen.style.display = 'none';
 
+            // 3. Pierwszy render
             renderSchedule(dateInput.value);
 
+            // 4. Podpięcie nasłuchiwania zmian
             dateInput.addEventListener('change', (e) => {
                 if (e.target.value) renderSchedule(e.target.value);
             });
@@ -556,6 +510,7 @@
         }
     }
 
+    // Uruchom start skryptu
     init();
 </script>
 </body>
