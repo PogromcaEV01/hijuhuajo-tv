@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ramówka emisji</title>
-    <!-- Dodany favicon -->
-    <link rel="icon" type="image/png" href="favicon2.png">
     <style>
         :root {
             --bg-color: #121212;
@@ -246,7 +244,7 @@
     const dateInput = document.getElementById('schedule-date');
     const loadingScreen = document.getElementById('loading-screen');
 
-    // --- ŁADOWANIE PLIKU CSV ---
+    // --- ŁADOWANIE PLIKU CSV (skopiowane z index.html) ---
     async function loadCSV() {
         const res = await fetch("anime_lista.csv");
         const text = await res.text();
@@ -283,7 +281,7 @@
         return db;
     }
 
-    // --- OBLICZANIE BLOKÓW ---
+    // --- OBLICZANIE BLOKÓW (skopiowane z index.html) ---
     function getBlockEnd(startTimeSec, durationSec) {
         const endTimeSec = startTimeSec + durationSec;
         const startHour = Math.floor(startTimeSec / 3600);
@@ -301,7 +299,7 @@
         }
     }
 
-    // --- LOGIKA SYMULACJI CAŁEGO DNIA Z UPOWAŻNIENIEM DO GAPÓW (ZMODYFIKOWANA) ---
+    // --- LOGIKA SYMULACJI CAŁEGO DNIA ---
     function simulateFullDay(targetCycleDay) {
         let t = 0; 
         let series_state = {};
@@ -399,20 +397,7 @@
             }
 
             if (advanced_t > t) {
-                // Wyliczamy do jakiej pełnej godziny przypisana jest ta iteracja (np. 14:00)
-                let base_hour_sec = Math.floor(t / 3600) * 3600;
-                let next_hour_sec = base_hour_sec + 3600;
-
-                // Sprawdzamy, czy odcinek "wylał się" na czas należący do KOLEJNEJ godziny
-                // i czy nie zamknął się idealnie o równej (np. skończył o 15:30)
-                if (advanced_t > next_hour_sec && advanced_t % 3600 !== 0) {
-                    let next_full_hour = Math.ceil(advanced_t / 3600) * 3600;
-                    t = next_full_hour; // Zamrożenie skradzionej godziny i skok do kolejnej pełnej
-                } else {
-                    // Jeśli odcinek skończył się normalnie wewnątrz swojej godziny (np. 14:30)
-                    t = advanced_t; 
-                }
-                
+                t = advanced_t; 
             } else {
                 t = Math.floor(t / 3600) * 3600 + 3600; 
             }
