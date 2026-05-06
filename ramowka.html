@@ -368,16 +368,18 @@
                 let duration = ep_info.durationSec;
                 let start_t = advanced_t;
                 let block_end_t = getBlockEnd(start_t, duration);
+                      // --- DODANA LOGIKA: Blokowanie czasu antenowego ---
+      // Jeśli to ostatni odcinek w kolejce i seria się kończy LUB wygenerowano tylko jeden odcinek (start serii)
+      if (ep === eps_to_play[eps_to_play.length - 1] && (state.finished || eps_to_play.length === 1)) {
+        let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
+        // Wymuś rozciągnięcie bloku do pełnej godziny (resztę wypełni ambient)
+        if (block_end_t < next_hour_t) {
+          block_end_t = next_hour_t;
+        }
+      }
+                
 
-                // --- DODANA LOGIKA Z INDEXU: Blokowanie nowej serii ---
-                // Jeśli to ostatni włączany odcinek i seria właśnie otrzymała status "finished"
-                if (ep === eps_to_play[eps_to_play.length - 1] && state.finished) {
-                    let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-                    // Wymuś rozciągnięcie bloku do pełnej godziny (jeśli skończył się wcześniej)
-                    if (block_end_t < next_hour_t) {
-                        block_end_t = next_hour_t;
-                    }
-                }
+                
                 // ---------------------------------------------
 
                 // Zapisujemy odcinek jeśli wypadł w poszukiwanym dniu
