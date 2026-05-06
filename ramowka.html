@@ -489,20 +489,16 @@ body.btn-halfway .epic-twitch-btn .text {
 </div>
 
 <script>
-    // Automatyczne generowanie listy 300 plików
-const frames = Array.from({ length: 34 }, (_, index) => `${index + 1}.png`);
+// Generujemy ścieżki uwzględniając folder 'vm/'
+const frames = Array.from({ length: 300 }, (_, index) => `vm/${index + 1}.png`);
 
 let i = 0;
 const favicon = document.getElementById("favicon");
 
 setInterval(() => {
-  // Podmieniamy href na kolejną nazwę z tablicy
   favicon.href = frames[i];
-  
-  // Zwiększamy licznik i resetujemy go po osiągnięciu 300
   i = (i + 1) % frames.length;
 }, 300);
-    
     // --- OBSŁUGA GOD-TIER BUTTONA ---
     const btn = document.getElementById('godTierBtn');
     const bdy = document.body;
