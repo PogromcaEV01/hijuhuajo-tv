@@ -653,6 +653,14 @@ setInterval(() => {
         }
     }
 
+    // --- NOWA FUNKCJA POMOCNICZA ---
+    function formatExactTime(sec) {
+        let h = Math.floor(sec / 3600) % 24;
+        let m = Math.floor((sec % 3600) / 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
+    // --- PRZEBUDOWANY SYMULATOR ---
     function simulateFullDay(targetCycleDay) {
         let t = 0; 
         let series_state = {};
@@ -661,7 +669,8 @@ setInterval(() => {
         }
 
         const max_t = targetCycleDay * 86400; 
-        let events_for_day = {}; 
+        const start_t_day = (targetCycleDay - 1) * 86400;
+        let events = []; // Zbieramy wszystkie wydarzenia do płaskiej listy
 
         while (t < max_t) {
             let day = Math.floor(t / 86400) + 1;
@@ -728,8 +737,9 @@ setInterval(() => {
             for (let ep of eps_to_play) {
                 let ep_info = db[ep.idx];
                 let duration = ep_info.durationSec;
-                let start_t = advanced_t;
-                let block_end_t = getBlockEnd(start_t, duration);
+                let ep_start_t = advanced_t;
+                let ep_end_t = ep_start_t + duration;
+                let block_end_t = getBlockEnd(ep_start_t, duration);
 
                 if (ep === eps_to_play[eps_to_play.length - 1] && (state.finished || eps_to_play.length === 1)) {
                     let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
@@ -738,20 +748,20 @@ setInterval(() => {
                     }
                 }
 
-                if (day === targetCycleDay) {
-                    if (!events_for_day[hour]) {
-                        events_for_day[hour] = {
-                            title: config.title || f,
-                            episodes: []
-                        };
-                    }
-                    events_for_day[hour].episodes.push({
+                // Jeśli wydarzenie pokrywa się z wybranym dniem, dodajemy je do listy
+                if (ep_end_t > start_t_day && ep_start_t < max_t) {
+                    events.push({
+                        title: config.title || f,
                         folder: f,
                         file: ep_info.file,
                         type: ep.type,
-                        idx: ep.idx
+                        idx: ep.idx,
+                        start_t: ep_start_t,
+                        end_t: ep_end_t,
+                        durationSec: duration
                     });
                 }
+                
                 advanced_t = block_end_t;
             }
 
@@ -762,13 +772,10 @@ setInterval(() => {
             }
         }
 
-        return events_for_day;
-    }
-    
-    function formatTime(hour) {
-        return `${hour.toString().padStart(2, '0')}:00`;
+        return events;
     }
 
+    // --- PRZEBUDOWANY RENDERER ---
     function renderSchedule(targetDateString) {
         scheduleList.innerHTML = '';
         
@@ -780,40 +787,81 @@ setInterval(() => {
         const cycleDay = (Math.floor(localEpochMs / 86400000) % 182) + 1;
         const currentDOW = ((cycleDay - 1) % 7) + 1; 
 
-        const dailyEvents = simulateFullDay(cycleDay);
+        const events = simulateFullDay(cycleDay);
+        const dayStartSec = (cycleDay - 1) * 86400;
 
-        for(let hour = 0; hour < 24; hour++) {
-            if (!dailyEvents[hour]) continue; 
+        // Inicjujemy zawsze 24 godziny
+        let hourlyBlocks = Array.from({length: 24}, () => ({ title: "Przerwa w emisji / Oczekiwanie", episodes: [] }));
 
-            const block = dailyEvents[hour];
+        // Rozrzucamy programy do odpowiednich godzin (nawet jeśli zajmują 3 godziny naraz)
+        events.forEach(ep => {
+            let epStartInDay = ep.start_t - dayStartSec;
+            let epEndInDay = ep.end_t - dayStartSec;
+            
+            let startHour = Math.max(0, Math.floor(epStartInDay / 3600));
+            let endHour = Math.min(23, Math.floor((epEndInDay - 1) / 3600)); 
+            if (endHour < 0) endHour = 0;
+
+            for (let h = startHour; h <= endHour; h++) {
+                hourlyBlocks[h].title = ep.title;
+                
+                let epObj = { ...ep };
+                epObj.displayTime = `${formatExactTime(ep.start_t)} - ${formatExactTime(ep.end_t)}`;
+                
+                // Oznaczamy, jeśli film zaczął się we wcześniejszej godzinie lub wczoraj
+                if (epStartInDay < h * 3600) {
+                    epObj.isContinuation = true;
+                }
+                
+                hourlyBlocks[h].episodes.push(epObj);
+            }
+        });
+
+        // Generujemy widok dla każdej z 24 godzin
+        for (let hour = 0; hour < 24; hour++) {
+            const block = hourlyBlocks[hour];
             const el = document.createElement('div');
             el.className = 'schedule-item';
             
-            const timeHTML = `<div class="time-block">${formatTime(hour)}</div>`;
+            const timeHTML = `<div class="time-block">${hour.toString().padStart(2, '0')}:00</div>`;
             
             let playingHTML = '';
             let currentFolder = null;
 
-            block.episodes.forEach((ep) => {
-                if (ep.folder !== currentFolder) {
-                    if (currentFolder !== null) playingHTML += `</div>`; 
-                    currentFolder = ep.folder;
-                    playingHTML += `
-                        <div class="ep-info">
-                            <span class="folder-tag">${ep.folder}</span>
-                    `;
-                }
-                
-                const durationMin = Math.round(ep.durationSec / 60);
+            if (block.episodes.length === 0) {
+                playingHTML = `<div class="ep-info"><span class="ep-name" style="color:#888;">Brak zaplanowanych programów</span></div>`;
+            } else {
+                block.episodes.forEach((ep) => {
+                    if (ep.folder !== currentFolder) {
+                        if (currentFolder !== null) playingHTML += `</div>`; 
+                        currentFolder = ep.folder;
+                        playingHTML += `
+                            <div class="ep-info">
+                                <span class="folder-tag">${ep.folder}</span>
+                        `;
+                    }
+                    
+                    const durationMin = Math.round(ep.durationSec / 60);
+                    
+                    // --- Tworzenie działającego linku URL dla R2 ---
+                    const baseUrl = "https://aelwyd.space/";
+                    const videoUrl = encodeURI(baseUrl + ep.folder + "/" + ep.file);
 
-                playingHTML += `
-                    <span class="ep-name">
-                        odc. ${ep.idx + 1} - ${ep.file} 
-                        <span style="color: #999; font-size: 0.85rem; font-weight: normal; margin-left: 5px;">(${durationMin} min)</span>
-                    </span>
-                `;
-            });
-            if (currentFolder !== null) playingHTML += `</div>`;
+                    let contBadge = ep.isContinuation ? `<span style="color: #ff46c5; font-size: 0.75rem; border: 1px solid #ff46c5; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">KONTYNUACJA</span>` : '';
+
+                    playingHTML += `
+                        <span class="ep-name">
+                            <strong style="color:var(--accent); font-size:1.05rem;">[${ep.displayTime}]</strong> ${contBadge}
+                            odc. ${ep.idx + 1} - 
+                            <a href="${videoUrl}" target="_blank" style="color: #cfcfcf; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#bb86fc'" onmouseout="this.style.color='#cfcfcf'">
+                                ${ep.file}
+                            </a> 
+                            <span style="color: #999; font-size: 0.85rem; font-weight: normal; margin-left: 5px;">(${durationMin} min)</span>
+                        </span>
+                    `;
+                });
+                if (currentFolder !== null) playingHTML += `</div>`;
+            }
             
             const contentHTML = `
                 <div class="content-block">
@@ -824,10 +872,6 @@ setInterval(() => {
             
             el.innerHTML = timeHTML + contentHTML;
             scheduleList.appendChild(el);
-        }
-
-        if (Object.keys(dailyEvents).length === 0) {
-            scheduleList.innerHTML = `<div style="text-align:center; padding: 20px;">Brak danych do wyświetlenia (pusty dzień).</div>`;
         }
 
         const infoDiv = document.createElement('div');
