@@ -775,7 +775,7 @@ setInterval(() => {
         return events;
     }
 
-    // --- PRZEBUDOWANY RENDERER ---
+    // --- PRZEBUDOWANY RENDERER (BEZ LINKÓW) ---
     function renderSchedule(targetDateString) {
         scheduleList.innerHTML = '';
         
@@ -793,7 +793,7 @@ setInterval(() => {
         // Inicjujemy zawsze 24 godziny
         let hourlyBlocks = Array.from({length: 24}, () => ({ title: "Przerwa w emisji / Oczekiwanie", episodes: [] }));
 
-        // Rozrzucamy programy do odpowiednich godzin (nawet jeśli zajmują 3 godziny naraz)
+        // Rozrzucamy programy do odpowiednich godzin
         events.forEach(ep => {
             let epStartInDay = ep.start_t - dayStartSec;
             let epEndInDay = ep.end_t - dayStartSec;
@@ -842,20 +842,12 @@ setInterval(() => {
                     }
                     
                     const durationMin = Math.round(ep.durationSec / 60);
-                    
-                    // --- Tworzenie działającego linku URL dla R2 ---
-                    const baseUrl = "https://aelwyd.space/";
-                    const videoUrl = encodeURI(baseUrl + ep.folder + "/" + ep.file);
-
                     let contBadge = ep.isContinuation ? `<span style="color: #ff46c5; font-size: 0.75rem; border: 1px solid #ff46c5; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">KONTYNUACJA</span>` : '';
 
                     playingHTML += `
                         <span class="ep-name">
                             <strong style="color:var(--accent); font-size:1.05rem;">[${ep.displayTime}]</strong> ${contBadge}
-                            odc. ${ep.idx + 1} - 
-                            <a href="${videoUrl}" target="_blank" style="color: #cfcfcf; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#bb86fc'" onmouseout="this.style.color='#cfcfcf'">
-                                ${ep.file}
-                            </a> 
+                            odc. ${ep.idx + 1} - <span style="color: #cfcfcf;">${ep.file}</span>
                             <span style="color: #999; font-size: 0.85rem; font-weight: normal; margin-left: 5px;">(${durationMin} min)</span>
                         </span>
                     `;
@@ -882,7 +874,6 @@ setInterval(() => {
         infoDiv.innerText = `TV Engine Sim - dzień cyklu: ${cycleDay}/182 | Dzień tyg. (DOW): ${currentDOW}`;
         scheduleList.appendChild(infoDiv);
     }
-
     async function init() {
         try {
             const resSchedule = await fetch("ramowka.json");
