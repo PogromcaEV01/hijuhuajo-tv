@@ -247,8 +247,9 @@
 </div>
 
 <script>
-let scheduleConfig = [];
-let videosDB = {}; 
+// --- ZMIENNE GLOBALNE ---
+let idMap = {};
+let ramowkaData = [];
 const ambientFile = "https://aelwyd.space/ambient.mp4";
 let currentIsAmbient = false;
 
@@ -299,7 +300,7 @@ tvScreen.addEventListener("mouseleave", () => {
   settingsMenu.classList.remove("show");
 });
 
-// --- LOGIKA WŁASNEGO ODTWARZACZA ---
+// --- LOGIKA KONTROLEK ODTWARZACZA ---
 video.addEventListener("pause", () => {
     video.play().catch(() => {});
 });
@@ -318,6 +319,10 @@ video.addEventListener("timeupdate", () => {
     progressBar.style.width = `${percent}%`;
     timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
   }
+});
+
+video.addEventListener("loadedmetadata", () => {
+  timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
 });
 
 btnMute.addEventListener("click", () => {
@@ -397,11 +402,7 @@ btnFullscreen.addEventListener("click", () => {
   }
 });
 
-video.addEventListener("loadedmetadata", () => {
-  timeDisplay.innerText = formatTimeRemaining(video.currentTime, video.duration);
-});
-
-// --- LOGIKA RAMÓWKI TV Z SYMULACJĄ (EFEKT DOMINA) ---
+// --- NOWY SILNIK ODTWARZANIA ---
 
 function getCycleDay() {
   const now = new Date();
@@ -409,273 +410,175 @@ function getCycleDay() {
   return (Math.floor(localEpochMs / 86400000) % 182) + 1;
 }
 
-async function loadCSV() {
-  const res = await fetch("anime_lista.csv");
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  const db = {};
-
-  for(let i = 0; i < lines.length; i++) {
-    const row = lines[i];
-    if (!row.includes('";"')) continue;
-    const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
-    if (cols.length < 4) continue;
-
-    const fullPath = cols[0];
-    const fileName = cols[1];
-    const ext = cols[2];
-    const durationStr = cols[3]; 
-
-    let durParts = durationStr.split(':').map(Number);
-    let durSec = 0;
-    if (durParts.length === 3) {
-      durSec = durParts[0] * 3600 + durParts[1] * 60 + durParts[2];
-    } else if (durParts.length === 2) {
-      durSec = durParts[0] * 60 + durParts[1];
-    }
-
-    // ZMIANA: Usunięcie C:\videos\ i zamiana ukośników
-    const folderName = fullPath.replace(/^C:\\videos\\/i, '').replace(/\\/g, '/');
-
-    if (!db[folderName]) db[folderName] = [];
-    db[folderName].push({
-      file: fileName + ext,
-      durationSec: durSec || 1440 
-    });
-  }
-  return db;
-}
-
-async function startTV() {
+async function loadData() {
   try {
-    const res = await fetch("ramowka.json");
-    scheduleConfig = await res.json();
-    document.getElementById("info").innerText = "Pobieranie bazy wideo...";
-    videosDB = await loadCSV();
-  } catch (e) {
-    document.getElementById("info").innerText = "BŁĄD ŁADOWANIA DANYCH 💀";
-    console.error(e);
-    return;
-  }
-  sync();
-  setInterval(sync, 5000);
-}
+    infoDiv.innerText = "Pobieranie bazy wideo...";
+    
+    // 1. Pobieranie ramówki
+    const ramRes = await fetch("ramowka.json");
+    ramowkaData = await ramRes.json();
 
-function getBlockEnd(startTimeSec, durationSec) {
-  const endTimeSec = startTimeSec + durationSec;
-  const startHour = Math.floor(startTimeSec / 3600);
-  const endHour = Math.floor((endTimeSec - 1) / 3600); 
+    // 2. Pobieranie listy anime i budowa drzewa
+    const csvRes = await fetch("anime_lista.csv");
+    const text = await csvRes.text();
+    const lines = text.trim().split('\n');
 
-  if (endHour > startHour) {
-    return (endHour + 1) * 3600;
-  } else {
-    const halfHourSec = startHour * 3600 + 1800;
-    if (startTimeSec < halfHourSec && endTimeSec <= halfHourSec) {
-      return halfHourSec;
-    } else {
-      return (startHour + 1) * 3600;
-    }
-  }
-}
+    let tree = { name: "root", folders: {}, files: [] };
 
-function simulateUpTo(target_t, currentCycleDay) {
-  let t = 0; 
-  let series_state = {};
-  for(let f in videosDB) {
-    series_state[f] = { next_ep_idx: 0, finished: false };
-  }
-
-  let current_playback = null;
-  const max_t = currentCycleDay * 86400; 
-
-  while (t <= target_t && t < max_t) {
-    let day = Math.floor(t / 86400) + 1;
-    let hour = Math.floor((t % 86400) / 3600);
-    let dow = ((day - 1) % 7) + 1;
-
-    let configConfigs = scheduleConfig.filter(x => x.hour === hour);
-    let config = configConfigs.find(x => !x.days || x.days.includes(dow)) || configConfigs[0];
-
-    if (!config) {
-      let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-      if (target_t >= t && target_t < next_hour_t) {
-        current_playback = { type: 'ambient', offsetSec: target_t - t };
-      }
-      t = next_hour_t;
-      continue;
-    }
-
-    let folders = config.folders || [config.folder];
-    let valid_folders = folders.filter(f => videosDB[f] && videosDB[f].length > 0);
-
-    if (valid_folders.length === 0) {
-      let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-      if (target_t >= t && target_t < next_hour_t) {
-        current_playback = { type: 'ambient', offsetSec: target_t - t };
-      }
-      t = next_hour_t;
-      continue;
-    }
-
-    let active_folder = null;
-    for (let f of valid_folders) {
-      if (!series_state[f]) series_state[f] = { next_ep_idx: 0, finished: false };
-      if (!series_state[f].finished) {
-        active_folder = f;
-        break;
-      }
-    }
-
-    // Jeśli wszystkie foldery przerobione, resetujemy do pierwszego
-    if (!active_folder) {
-      for (let f of valid_folders) {
-        series_state[f].next_ep_idx = 0;
-        series_state[f].finished = false;
-      }
-      active_folder = valid_folders[0];
-    }
-
-    let advanced_t = t;
-    let f = active_folder;
-    let db = videosDB[f];
-    let total_eps = db.length;
-    let state = series_state[f];
-    let eps_to_play = [];
-
-    if (total_eps === 1) {
-      eps_to_play.push( { type: 'premiere', idx: 0 } );
-      state.finished = true;
-    } else {
-      if (state.next_ep_idx === 0) {
-        eps_to_play.push( { type: 'premiere', idx: 0 } );
-        state.next_ep_idx++;
-      } else if (state.next_ep_idx < total_eps) {
-        eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
-        eps_to_play.push( { type: 'premiere', idx: state.next_ep_idx } );
-        state.next_ep_idx++;
-      } else if (state.next_ep_idx === total_eps) {
-        // Ostatnia powtórka przed końcem sezonu
-        eps_to_play.push( { type: 'rerun', idx: state.next_ep_idx - 1 } );
-        state.finished = true;
-      }
-    }
-
-    for (let ep of eps_to_play) {
-      let ep_info = db[ep.idx];
-      let duration = ep_info.durationSec;
-      let start_t = advanced_t;
-      let end_t = start_t + duration;
-      let block_end_t = getBlockEnd(start_t, duration);
-            // --- DODANA LOGIKA: Blokowanie czasu antenowego ---
-      // Jeśli to ostatni odcinek w kolejce i seria się kończy LUB wygenerowano tylko jeden odcinek (start serii)
-      if (ep === eps_to_play[eps_to_play.length - 1] && (state.finished || eps_to_play.length === 1)) {
-        let next_hour_t = Math.floor(t / 3600) * 3600 + 3600;
-        // Wymuś rozciągnięcie bloku do pełnej godziny (resztę wypełni ambient)
-        if (block_end_t < next_hour_t) {
-          block_end_t = next_hour_t;
-        }
-      }
+    for(let i = 0; i < lines.length; i++) {
+      const row = lines[i];
+      if (!row.includes('";"')) continue;
+      const cols = row.split('";"').map(s => s.replace(/^"|"$/g, ''));
+      if (cols.length < 4) continue;
       
-      // ---------------------------------------------
-      if (target_t >= start_t && target_t < block_end_t) {
-        if (target_t < end_t) {
-          current_playback = {
-            type: 'video', folder: f, file: ep_info.file,
-            episodeIndex: ep.idx + 1, isRerun: ep.type === 'rerun',
-            duration: duration, offsetSec: target_t - start_t,
-            configTitle: config.title || f
-          };
-        } else {
-          current_playback = { type: 'ambient', offsetSec: target_t - end_t };
-        }
-      }
-      advanced_t = block_end_t;
+      const fullPath = cols[0];
+      const fileName = cols[1];
+      const ext = cols[2];
+      const durationStr = cols[3];
+      
+      let durParts = durationStr.split(':').map(Number);
+      let durSec = 0;
+      if (durParts.length === 3) durSec = durParts[0] * 3600 + durParts[1] * 60 + durParts[2];
+      else if (durParts.length === 2) durSec = durParts[0] * 60 + durParts[1];
+
+      let pathStr = fullPath.replace(/^C:\\videos\\/i, '');
+      let parts = pathStr.split('\\');
+      
+      let current = tree;
+      parts.forEach(part => {
+          if (!current.folders[part]) {
+              current.folders[part] = { name: part, folders: {}, files: [] };
+          }
+          current = current.folders[part];
+      });
+      current.files.push({
+          fileName: fileName + ext,
+          duration: durSec,
+          folderPath: pathStr.replace(/\\/g, '/')
+      });
     }
 
-    if (advanced_t > t) {
-      t = advanced_t; 
-    } else {
-      t = Math.floor(t / 3600) * 3600 + 3600; 
+    // 3. Automatyczne nadawanie hierarchicznych numerów (np. 1.1, 2.1.3)
+    function assignIds(node, prefix) {
+        node.files.sort((a, b) => a.fileName.localeCompare(b.fileName));
+        node.files.forEach((f, i) => {
+            let fileId = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+            
+            const encodedFolder = f.folderPath.split('/').map(encodeURIComponent).join('/');
+            idMap[fileId] = {
+                url: `https://aelwyd.space/${encodedFolder}/${encodeURIComponent(f.fileName)}`,
+                duration: f.duration,
+                folderName: node.name,
+                episodeIndex: i + 1
+            };
+        });
+
+        let folderNames = Object.keys(node.folders).sort((a, b) => a.localeCompare(b));
+        folderNames.forEach((fName, i) => {
+            let folderId = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+            assignIds(node.folders[fName], folderId);
+        });
     }
+
+    let rootFolders = Object.keys(tree.folders).sort((a, b) => a.localeCompare(b));
+    rootFolders.forEach((fName, i) => {
+        assignIds(tree.folders[fName], `${i + 1}`);
+    });
+
+    infoDiv.innerText = "Synchronizacja...";
+    updatePlayback();
+    setInterval(updatePlayback, 5000); 
+
+  } catch (error) {
+    console.error("Błąd ładowania danych: ", error);
+    infoDiv.innerText = "Błąd pobierania bazy wideo 💀";
   }
-  return current_playback;
 }
 
-function playAmbient(ambientOffsetSec = 0) {
-  if (currentIsAmbient) return;
-  
-  currentIsAmbient = true;
-  video.src = ambientFile;
-  video.loop = true;
-  video.dataset.slotId = "ambient";
-  video.load();
-  
-  video.onloadedmetadata = () => {
-    video.currentTime = ambientOffsetSec % (video.duration || 1);
-    video.play().catch(() => {});
-  };
-}
-
-function sync() {
-  const now = new Date();
+function updatePlayback() {
   const cycleDay = getCycleDay();
   
-  const h = now.getHours();
-  const m = now.getMinutes();
-  const s = now.getSeconds();
-  
-  const target_t = (cycleDay - 1) * 86400 + h * 3600 + m * 60 + s;
-  const playback = simulateUpTo(target_t, cycleDay);
+  if (!ramowkaData || ramowkaData.length === 0) return playAmbient();
 
-  if (!playback) {
-    document.getElementById("info").innerText = "Brak programu do wyświetlenia.";
-    return;
+  const dayIndex = (cycleDay - 1) % ramowkaData.length;
+  const todaySchedule = ramowkaData[dayIndex];
+
+  if (!todaySchedule || todaySchedule.length === 0) return playAmbient();
+
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0); 
+  const elapsedSec = Math.floor((now.getTime() - startOfDay.getTime()) / 1000);
+
+  let totalPlaylistSec = 0;
+  const playlist = [];
+  for (let id of todaySchedule) {
+      if (idMap[id]) {
+          playlist.push({ id, ...idMap[id] });
+          totalPlaylistSec += idMap[id].duration;
+      }
   }
 
-  const formatTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  if (playlist.length === 0) return playAmbient();
 
-  if (playback.type === 'video') {
-    // ZMIANA: Kodowanie każdego folderu w zagnieżdżonej ścieżce osobno
-    const encodedFolder = playback.folder.split('/').map(encodeURIComponent).join('/');
-    const videoUrl = `https://aelwyd.space/${encodedFolder}/${encodeURIComponent(playback.file)}`;
-    const slotId = `${playback.folder}-${playback.file}-${playback.isRerun ? 'R' : 'P'}`;
+  const currentCycleSec = elapsedSec % totalPlaylistSec;
+  
+  let accumulated = 0;
+  let currentVideo = null;
+  let currentOffset = 0;
 
-    if (video.dataset.slotId !== slotId) {
-      video.dataset.slotId = slotId;
-      video.src = videoUrl;
-      currentIsAmbient = false;
-      video.load();
-
-      video.onloadedmetadata = () => {
-        video.dataset.epDuration = playback.duration;
-        video.currentTime = playback.offsetSec;
-        video.play().catch(() => {});
-      };
-
-      video.onended = () => {
-        if (!currentIsAmbient) playAmbient();
-      };
-    } else {
-      if (!currentIsAmbient && video.readyState >= 1) {
-        if (playback.offsetSec >= playback.duration) {
-          playAmbient();
-        }
+  for (let i = 0; i < playlist.length; i++) {
+      let ep = playlist[i];
+      if (accumulated + ep.duration > currentCycleSec) {
+          currentVideo = ep;
+          currentOffset = currentCycleSec - accumulated;
+          break;
       }
-    }
+      accumulated += ep.duration;
+  }
 
-    const typeLabel = playback.isRerun ? 'powtórka' : 'nowy';
-    const shortFolderName = playback.folder.split('/').pop(); // Pobiera tylko tekst po ostatnim ukośniku
-    document.getElementById("info").innerText =
-      `▶ dzień ${cycleDay}/182 | ${formatTimeStr} | ${shortFolderName} odc. ${playback.episodeIndex}`;
-
-  } else if (playback.type === 'ambient') {
-    playAmbient(playback.offsetSec);
-    document.getElementById("info").innerText =
-      `🌿 dzień ${cycleDay}/182 | ${formatTimeStr} |`;
+  if (currentVideo) {
+      playVideo(currentVideo, currentOffset, cycleDay);
+  } else {
+      playAmbient();
   }
 }
 
-startTV();
+function playVideo(ep, offsetSec, cycleDay) {
+    if (video.dataset.currentId !== ep.id) {
+        video.dataset.currentId = ep.id;
+        video.src = ep.url;
+        currentIsAmbient = false;
+        video.loop = false;
+        video.load();
+
+        video.onloadedmetadata = () => {
+            video.currentTime = offsetSec;
+            video.play().catch(() => {});
+        };
+
+        video.onended = () => updatePlayback();
+    } else {
+        if (!video.paused && Math.abs(video.currentTime - offsetSec) > 5) {
+            video.currentTime = offsetSec;
+        }
+    }
+
+    infoDiv.innerText = `▶ Dzień ${cycleDay}/182 | ${ep.folderName} odc. ${ep.episodeIndex}`;
+}
+
+function playAmbient() {
+    if (video.dataset.currentId !== "ambient") {
+        video.src = ambientFile;
+        video.dataset.currentId = "ambient";
+        currentIsAmbient = true;
+        video.loop = true;
+        video.play().catch(() => {});
+        infoDiv.innerText = "▶ Przerwa techniczna";
+    }
+}
+
+loadData();
 </script>
 </body>
 </html>
