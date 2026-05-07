@@ -469,7 +469,7 @@ body.btn-halfway .epic-twitch-btn .text {
     <h1>𓇢𓆸 🍡૮₍ ˃ ⤙ ˂ ₎ა  °‧ 𓆝 𓆟 𓆞 ·｡  (ᴗ˳ᴗ)ᶻ𝗓𐰁 ☕︎✧₊⁺🕯⋆.˚୨ৎ  /•᷅‎‎•᷄\੭ 𓂃🪶</h1>
     
     <div class="controls">
-        <label for="schedule-date">Wybierz dzień emisji:</label>
+        <label for="schedule-date">wybierz dzień emisji:</label>
         <input type="date" id="schedule-date" disabled>
     </div>
 
@@ -830,7 +830,7 @@ setInterval(() => {
                     }
                     
                     const durationMin = Math.round(ep.durationSec / 60);
-                    let contBadge = ep.isContinuation ? `<span style="color: #ff46c5; font-size: 0.75rem; border: 1px solid #ff46c5; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">KONTYNUACJA</span>` : '';
+                    let contBadge = ep.isContinuation ? `<span style="color: #ff46c5; font-size: 0.75rem; border: 1px solid #ff46c5; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">kontynuacja</span>` : '';
 
                     playingHTML += `
                         <span class="ep-name">
@@ -859,7 +859,7 @@ setInterval(() => {
         infoDiv.style.color = '#555';
         infoDiv.style.marginTop = '25px';
         infoDiv.style.fontSize = '0.85rem';
-        infoDiv.innerText = `TV Engine Sim - dzień cyklu: ${cycleDay}/182 | Dzień tyg. (DOW): ${currentDOW}`;
+        infoDiv.innerText = `tv engine sim - dzień cyklu: ${cycleDay}/182 | dzień tyg. (DOW): ${currentDOW}`;
         scheduleList.appendChild(infoDiv);
     }
     async function init() {
